@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>题材库</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        #main-frame {
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        #left-frame {
+            width: 390px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #right-frame {
+            flex: 1;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #desc-frame {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        #concept-desc {
+            height: 120px;
+            font-size: 14px;
+            padding: 15px;
+            margin-bottom: 15px;
+            overflow: auto;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            cursor: pointer;
+            background-color: #e8f4ff;
+            transition: background-color 0.2s;
+        }
+
+        th:hover {
+            background-color: #d0e4ff;
+        }
+
+        #left-table tbody tr {
+            transition: background-color 0.2s, transform 0.2s;
+        }
+
+        #left-table tbody tr:hover {
+            cursor: pointer;
+            background-color: #f0f8ff;
+            transform: scale(1.02);
+        }
+
+        #right-table tbody tr {
+            transition: background-color 0.2s, transform 0.2s;
+        }
+
+        #right-table tbody tr:hover {
+            background-color: #e8f4ff;
+            transform: scale(1.01);
+        }
+
+        #status-frame {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+        }
+
+        #status-bar {
+            flex: 1;
+        }
+
+        #disclaimer {
+            text-align: right;
+            color: #666;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+            display: inline-block; 
+            vertical-align: middle; 
+            margin-left: 5px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+
+        #refresh-btn {
+            background-color: #2196F3;
+        }
+
+        #refresh-btn:hover {
+            background-color: #0b7dda;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="main-frame">
+        <div id="left-frame">
+            <h3>概念列表</h3>
+            <table id="left-table">
+                <thead>
+                    <tr>
+                        <th data-sort="序号" style="width: 10%;">序号</th>
+                        <th data-sort="名称" style="width: 25%;">名称</th>
+                        <th data-sort="涨停" style="width: 10%;">涨停</th>
+                        <th data-sort="热度" style="width: 10%;">热度</th>
+                        <th data-sort="排名变化" style="width: 10%;">排名变化</th>
+                        <th data-sort="创建时间" style="width: 35%;">创建时间</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div id="right-frame">
+            <div id="desc-frame">
+                <h2 id="concept-title"></h2>
+                <div>
+                    <button id="export-btn"><i class="fa-solid fa-download"></i> 导出股票代码</button>
+                    <button id="refresh-btn"><i class="fa-solid fa-rotate-right"></i> 刷新</button>
+                </div>
+            </div>
+            <div id="concept-desc"></div>
+            <h3>相关上市公司</h3>
+            <table id="right-table">
+                <thead>
+                    <tr>
+                        <th data-sort="主干" style="width: 5%;">主干</th>
+                        <th data-sort="枝干" style="width: 10%;">枝干</th>
+                        <th data-sort="代码" style="width: 5%;">代码</th>
+                        <th data-sort="名称" style="width: 10%;">名称</th>
+                        <th data-sort="热度" style="width: 5%;">热度</th>
+                        <th data-sort="关联原因" style="width: 65%;">关联原因</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    <div id="status-frame">
+        <div id="status-bar"></div>
+        <div id="disclaimer">免责申明：本文涉及资讯、数据等内容来自网络公共信息，仅供参考，不构成投资建议</div>
+    </div>
+    <script>
+        const leftTable = document.getElementById('left-table');
+        const rightTable = document.getElementById('right-table');
+        const conceptTitle = document.getElementById('concept-title');
+        const conceptDesc = document.getElementById('concept-desc');
+        const statusBar = document.getElementById('status-bar');
+        const exportBtn = document.getElementById('export-btn');
+        const refreshBtn = document.getElementById('refresh-btn');
+
+        let cache = {
+            concept_list: null,
+            concept_details: {}
+        };
+
+        let sortStates = {
+            left: { '涨停': false, '热度': false, '排名变化': false, '创建时间': false },
+            right: { '主干': false, '枝干': false, '代码': false, '热度': false, '名称': false, '关联原因': false }
+        };
+
+        // 去除HTML标签、HTML实体并保留换行
+        function cleanHtmlText(text) {
+            if (!text) return "";
+            text = text.replace(/<p.*?>/g, '\n');
+            text = text.replace(/<br\s*\/?>/g, '');
+            text = text.replace(/<.*?>/g, '');
+            text = text.replace(/&[a-zA-Z0-9]+;/g, '');
+            text = text.replace(/\n+/g, '\n\n').trim();
+            return text;
+        }
+
+        // 加载概念列表数据
+        async function loadConceptData() {
+            statusBar.textContent = "正在加载概念列表...";
+            leftTable.tBodies[0].innerHTML = '';
+
+            if (!cache.concept_list) {
+                try {
+                    const response = await fetch("https://applhb.longhuvip.com/w1/api/index.php?a=InfoList&apiv=w35&c=Theme&PhoneOSNew=1&DeviceID=e204e370-f5f1-4964-8660-7f38015e3c60&VerSion=5.13.0.0&Token=0&");
+                    const data = await response.json();
+
+                    if (data.errcode !== "0") {
+                        const errorMsg = data.errmsg || "未知错误";
+                        statusBar.textContent = `API错误: ${errorMsg}`;
+                        alert(`服务器返回错误: ${errorMsg}`);
+                        return;
+                    }
+
+                    cache.concept_list = data;
+                } catch (error) {
+                    statusBar.textContent = "网络连接失败";
+                    alert(`无法获取概念数据: ${error.message}`);
+                    return;
+                }
+            }
+
+            const conceptList = cache.concept_list.List || [];
+            let successCount = 0;
+
+            conceptList.forEach((item, idx) => {
+                try {
+                    const ztNum = item.ZTNum || 0;
+                    const ztNumDisplay = ztNum === 0 ? "" : ztNum.toString();
+
+                    let createTime = "";
+                    if (item.CreateTime) {
+                        const dt = new Date(parseInt(item.CreateTime) * 1000);
+                        createTime = dt.toLocaleDateString('zh-CN', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+                    }
+
+                    const row = leftTable.tBodies[0].insertRow();
+                    row.insertCell().textContent = (idx + 1).toString().padStart(2, '0');
+                    row.insertCell().textContent = item.Name || "未知";
+                    row.insertCell().textContent = ztNumDisplay;
+
+                    // 添加热度列（无颜色）
+                    const hotCell = row.insertCell();
+                    hotCell.textContent = item.Sort || 0;
+
+                    // 添加排名变化列（上升为红色，下降为绿色）
+                    const changeCell = row.insertCell();
+                    const upNum = item.UpNum || 0;
+                    changeCell.textContent = upNum;
+                    if (upNum > 0) {
+                        changeCell.style.color = "red";
+                        changeCell.textContent = `${upNum}↑`;
+                    } else if (upNum < 0) {
+                        changeCell.style.color = "green";
+                        changeCell.textContent = `${Math.abs(upNum)}↓`;
+                    }
+
+                    row.insertCell().textContent = createTime;
+                    row.addEventListener('click', () => onConceptSelect(item));
+                    successCount++;
+                } catch (error) {
+                    // 单个概念加载失败时继续处理下一个
+                }
+            });
+
+            if (successCount > 0) {
+                statusBar.textContent = `成功加载 ${successCount}/${conceptList.length} 个概念`;
+
+                if (leftTable.tBodies[0].rows.length > 0) {
+                    leftTable.tBodies[0].rows[0].click();
+                }
+            } else {
+                statusBar.textContent = "所有概念加载失败";
+                alert("未能加载任何概念数据");
+            }
+        }
+
+        // 当选择概念时加载详情数据
+        async function onConceptSelect(item) {
+            const conceptName = item.Name;
+            const conceptId = item.ID;
+
+            if (!conceptId) {
+                alert("无法获取概念ID，请刷新数据");
+                return;
+            }
+
+            statusBar.textContent = `正在加载 ${conceptName} 详情...`;
+            conceptTitle.textContent = `${conceptName}（ID:${conceptId}）`;
+            conceptDesc.textContent = "";
+            rightTable.tBodies[0].innerHTML = '';
+
+            if (!cache.concept_details[conceptId]) {
+                try {
+                    const response = await fetch(`https://applhb.longhuvip.com/w1/api/index.php?a=InfoGet&apiv=w35&c=Theme&PhoneOSNew=1&DeviceID=e204e370-f5f1-4964-8660-7f38015e3c60&VerSion=5.13.0.0&Token=0&ID=${conceptId}`);
+                    const data = await response.json();
+
+                    if (data.errcode !== "0") {
+                        const errorMsg = data.errmsg || "未知错误";
+                        statusBar.textContent = `API错误: ${errorMsg}`;
+                        alert(`服务器返回错误: ${errorMsg}`);
+                        return;
+                    }
+
+                    cache.concept_details[conceptId] = data;
+                } catch (error) {
+                    statusBar.textContent = `网络请求失败: ${error.message}`;
+                    return;
+                }
+            }
+
+            const data = cache.concept_details[conceptId];
+
+            let description = "";
+            if (data.BriefIntro) {
+                description += `概念简介:\n${cleanHtmlText(data.BriefIntro)}\n\n`;
+            }
+            if (data.Introduction) {
+                description += `详细说明:\n${cleanHtmlText(data.Introduction)}\n\n`;
+            }
+            if (data.Desc) {
+                description += `补充说明:\n${cleanHtmlText(data.Desc)}`;
+            }
+            conceptDesc.textContent = description.trim() || "暂无详细描述";
+
+            let stocks = [];
+
+            if (data.Table && Array.isArray(data.Table)) {
+                data.Table.forEach(tableItem => {
+                    if (tableItem.Level1) {
+                        const level1Name = tableItem.Level1.Name || "";
+
+                        if (tableItem.Level1.Stocks && Array.isArray(tableItem.Level1.Stocks)) {
+                            tableItem.Level1.Stocks.forEach(stock => {
+                                stocks.push({
+                                    ...stock,
+                                    '主干': level1Name,
+                                    '枝干': ""
+                                });
+                            });
+                        }
+
+                        if (tableItem.Level2 && Array.isArray(tableItem.Level2)) {
+                            tableItem.Level2.forEach(level2Item => {
+                                if (typeof level2Item === 'object') {
+                                    const level2Name = level2Item.Name || "";
+
+                                    if (level2Item.Stocks && Array.isArray(level2Item.Stocks)) {
+                                        level2Item.Stocks.forEach(stock => {
+                                            stocks.push({
+                                                ...stock,
+                                                '主干': level1Name,
+                                                '枝干': level2Name
+                                            });
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+            } else if (data.Stocks && Array.isArray(data.Stocks)) {
+                data.Stocks.forEach(stock => {
+                    if (typeof stock === 'object') {
+                        stocks.push({
+                            ...stock,
+                            '主干': "-",
+                            '枝干': "-"
+                        });
+                    }
+                });
+            }
+
+            stocks.forEach(stock => {
+                try {
+                    let reason = "";
+                    if (stock.Reason) {
+                        reason = cleanHtmlText(stock.Reason);
+                    } else if (stock.Tag && Array.isArray(stock.Tag)) {
+                        stock.Tag.forEach(tag => {
+                            if (tag.Reason) {
+                                reason += `${tag.Name}:${cleanHtmlText(tag.Reason)}\n`;
+                            }
+                        });
+                    }
+
+                    const hotNum = (stock.HotNum || stock.Hot || 0).toString();
+                    const isHot = stock.IsHot === "1";
+
+                    const row = rightTable.tBodies[0].insertRow();
+                    row.insertCell().textContent = stock.主干 || "";
+                    row.insertCell().textContent = stock.枝干 || "-";
+                    row.insertCell().textContent = stock.StockID || "";
+                    row.insertCell().textContent = stock.prod_name || "";
+                    row.insertCell().textContent = hotNum;
+                    row.insertCell().textContent = reason.trim() || "-";
+
+                    if (isHot) {
+                        row.style.color = "red";
+                    }
+                } catch (error) {
+                    // 单个股票数据处理失败时继续处理下一个
+                }
+            });
+
+            statusBar.textContent = `【${conceptName}】详情加载完成`;
+        }
+
+        // 左侧表格排序
+        function sortLeftTable(column) {
+            sortStates.left[column] = !sortStates.left[column];
+            const reverse = sortStates.left[column];
+
+            const rows = Array.from(leftTable.tBodies[0].rows);
+            rows.sort((a, b) => {
+                const colIndex = Array.from(leftTable.tHead.rows[0].cells).findIndex(cell => cell.dataset.sort === column);
+                let valA = a.cells[colIndex].textContent;
+                let valB = b.cells[colIndex].textContent;
+
+                if (column === '涨停' || column === '热度') {
+                    valA = parseInt(valA) || 0;
+                    valB = parseInt(valB) || 0;
+                } else if (column === '排名变化') {
+                    valA = valA.startsWith('↑') ? parseInt(valA.substring(1)) : (valA.startsWith('↓') ? -parseInt(valA.substring(1)) : 0);
+                    valB = valB.startsWith('↑') ? parseInt(valB.substring(1)) : (valB.startsWith('↓') ? -parseInt(valB.substring(1)) : 0);
+                } else if (column === '创建时间') {
+                    valA = valA ? new Date(valA) : new Date(0);
+                    valB = valB ? new Date(valB) : new Date(0);
+                }
+
+                return (valA > valB ? 1 : -1) * (reverse ? -1 : 1);
+            });
+
+            rows.forEach((row, index) => {
+                leftTable.tBodies[0].appendChild(row);
+                row.cells[0].textContent = (index + 1).toString().padStart(2, '0');
+            });
+
+            updateSortIndicator(leftTable, column, reverse);
+            console.log(`[表头排序] - ${conceptTitle.textContent} [${column}]`);
+        }
+
+        // 右侧表格排序
+        function sortRightTable(column) {
+            sortStates.right[column] = !sortStates.right[column];
+            const reverse = sortStates.right[column];
+
+            const rows = Array.from(rightTable.tBodies[0].rows);
+            rows.sort((a, b) => {
+                const colIndex = Array.from(rightTable.tHead.rows[0].cells).findIndex(cell => cell.dataset.sort === column);
+                let valA = a.cells[colIndex].textContent;
+                let valB = b.cells[colIndex].textContent;
+
+                if (column === '热度') {
+                    valA = parseFloat(valA) || 0;
+                    valB = parseFloat(valB) || 0;
+                } else if (column === '代码') {
+                    valA = parseInt(valA) || 0;
+                    valB = parseInt(valB) || 0;
+                }
+
+                return (valA > valB ? 1 : -1) * (reverse ? -1 : 1);
+            });
+
+            rows.forEach(row => {
+                rightTable.tBodies[0].appendChild(row);
+            });
+
+            updateSortIndicator(rightTable, column, reverse);
+        }
+
+        // 更新列标题的排序指示器
+        function updateSortIndicator(table, column, reverse) {
+            Array.from(table.tHead.rows[0].cells).forEach(cell => {
+                cell.textContent = cell.dataset.sort;
+            });
+
+            const targetCell = Array.from(table.tHead.rows[0].cells).find(cell => cell.dataset.sort === column);
+            targetCell.textContent += reverse ? ' ↓' : ' ↑';
+        }
+
+        // 导出右侧表格中的所有股票代码
+        function exportRightTableCodes() {
+            const rows = rightTable.tBodies[0].rows;
+            if (rows.length === 0) {
+                alert("右侧表格中没有数据");
+                return;
+            }
+
+            const blkLines = [];
+            const txtLines = [];
+
+            for (let i = 0; i < rows.length; i++) {
+                const code = rows[i].cells[2].textContent.trim();
+                if (code && /^\d+$/.test(code)) {
+                    if (code.length === 6) {
+                        if (code.startsWith('6')) {
+                            blkLines.push('1' + code);
+                        } else if (code.startsWith('8') || code.startsWith('4')) {
+                            blkLines.push('2' + code);
+                        } else {
+                            blkLines.push('0' + code);
+                        }
+                        txtLines.push(code);
+                    } else if (code.length === 5 && code.startsWith('0')) {
+                        blkLines.push('31#' + code.slice(1));
+                        txtLines.push(code);
+                    }
+                }
+            }
+
+            if (blkLines.length === 0) {
+                alert("未找到有效的股票代码");
+                return;
+            }
+
+            const today = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+            const conceptName = conceptTitle.textContent.split('（')[0];
+
+            const saveFile = (content, ext) => {
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `${conceptName}_${today}.${ext}`;
+                a.click();
+                URL.revokeObjectURL(a.href);
+            };
+
+            saveFile(blkLines.join('\n'), 'blk');
+            saveFile(txtLines.join('\n'), 'txt');
+
+            alert(`成功导出 ${blkLines.length} 个股票代码到:\n${conceptName}_${today}.blk\n同时生成普通代码文件: ${conceptName}_${today}.txt`);
+            console.log(`题材库-导出文件成功:${conceptName}`);
+        }
+
+        // 清空所有缓存并刷新界面
+        function clearCacheAndRefresh() {
+            cache = {
+                concept_list: null,
+                concept_details: {}
+            };
+
+            statusBar.textContent = "缓存已清空，正在重新加载数据...";
+            loadConceptData();
+            rightTable.tBodies[0].innerHTML = '';
+            conceptTitle.textContent = "";
+            conceptDesc.textContent = "";
+
+            if (leftTable.tBodies[0].rows.length > 0) {
+                leftTable.tBodies[0].rows[0].click();
+            }
+
+            console.log('【题材库】- 清缓存 + 刷新');
+        }
+
+        // 绑定表头排序事件
+        Array.from(leftTable.tHead.rows[0].cells).forEach(cell => {
+            if (cell.dataset.sort) {
+                cell.addEventListener('click', () => sortLeftTable(cell.dataset.sort));
+            }
+        });
+
+        Array.from(rightTable.tHead.rows[0].cells).forEach(cell => {
+            if (cell.dataset.sort) {
+                cell.addEventListener('click', () => sortRightTable(cell.dataset.sort));
+            }
+        });
+
+        // 绑定导出和刷新按钮事件
+        exportBtn.addEventListener('click', exportRightTableCodes);
+        refreshBtn.addEventListener('click', clearCacheAndRefresh);
+
+        // 加载数据
+        loadConceptData();
+    </script>
+</body>
+
+</html>

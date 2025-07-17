@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人网站</title>
+    <style type="text/css">
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            border: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #121212;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            width: 7%;
+            background-color: #222;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 0px;
+            animation: slideInLeft 0.5s ease-out;
+        }
+
+        /* 链接样式 */
+        .sidebar a {
+            font-size: 14px;
+            color: #F79000;
+            text-decoration: none;
+            letter-spacing: 2px;
+            text-align: center;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar a:hover {
+            background-color: #333;
+            color: #FFFFFF;
+            transform: scale(1.05);
+        }
+
+        /* 分隔线样式 */
+        .separator {
+            border-bottom: 1px solid #888;
+            margin: 5px 0;
+        }
+
+        /* 主内容区域样式 */
+        .main-content {
+            width: 100%;
+            padding: 0px;
+            background-color: #333;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* 主内容区域的 iframe 样式 */
+        .main-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* 动画效果 */
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(-100%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <a href="file:///E:/桌面/个人网页/indexY.html" target="cFrame">实盘</a>
+        <div class="separator"></div>
+        <a href="https://xuangutong.com.cn/top-gainer" target="cFrame">热点解读</a>
+        <div class="separator"></div>
+        <a href="https://www.jiuyangongshe.com/u/4df747be1bf143a998171ef03559b517" target="cFrame">韭菜公社</a>
+        <div class="separator"></div>
+        <a href="http://fast1.tdx.com.cn:7615/site/tdx_zxts/page_main.html" target="cFrame">要闻直播</a>
+        <div class="separator"></div>
+        <a href="http://www.wuylh.com/replayrobot/index.html" target="cFrame">舞阳量化</a>
+        <div class="separator"></div>
+        <a href="http://yuanchuang.10jqka.com.cn/qingbao/" target="cFrame">投资机会</a>
+        <div class="separator"></div>
+        <a href="http://field.10jqka.com.cn/hydt_list/" target="cFrame">行业动态</a>
+        <div class="separator"></div>
+        <a href="http://finance.sina.com.cn/money/globalindex/" target="cFrame">全球市场</a>
+        <div class="separator"></div>
+        <a href="https://www.cailianpress.com/index/" target="cFrame">财联资讯</a>
+        <div class="separator"></div>
+        <a href="https://wallstreetcn.com/live/a-stock" target="cFrame">华尔街闻</a>
+        <div class="separator"></div>
+        <a href="http://www.guhai.com.cn" target="cFrame">股海网</a>
+        <div class="separator"></div>
+        <a href="https://xuangutong.com.cn/dingpan" target="cFrame">选股通盯盘</a>
+        <div class="separator"></div>
+        <a href="http://kuaixun.eastmoney.com/zhibo.html" target="cFrame">东方快讯</a>
+        <div class="separator"></div>
+        <a href="http://live.sina.com.cn/zt/f/v/finance/globalnews1?tag=10" target="cFrame">新浪直播</a>
+        <div class="separator"></div>
+        <a href="https://xuangutong.com.cn/live" target="cFrame">股宝资讯</a>
+        <div class="separator"></div>
+        <a href="http://finance.eastmoney.com/news/cywjh.html" target="cFrame">要闻精华</a>
+        <div class="separator"></div>
+        <a href="http://stock.jrj.com.cn/list/stockssgs.shtml" target="cFrame">金融界讯</a>
+        <div class="separator"></div>
+        <a href="http://stock.10jqka.com.cn/jiepan_list/" target="cFrame">实时解盘</a>
+        <div class="separator"></div>
+        <a href="https://stock.sohu.com/s2011/jlp/index.shtml" target="cFrame">金罗盘</a>
+        <div class="separator"></div>
+        <a href="http://data.10jqka.com.cn/gzqh/" target="cFrame">期指持仓</a>
+        <div class="separator"></div>
+        <a href="http://stock.10jqka.com.cn/fupan/" target="cFrame">同花复盘</a>
+        <div class="separator"></div>
+        <a href="https://stock.forever-thought.top/all.html" target="cFrame">形态分析</a>
+        <div class="separator"></div>
+        <a href="http://stock.10jqka.com.cn/fincalendar.shtml" target="cFrame">投资日历</a>
+    </div>
+    <!-- 主内容区域 -->
+    <div class="main-content">
+        <iframe name="cFrame" src="file:///E:/桌面/个人网页/indexY.html"></iframe>
+    </div>
+</body>
+
+</html>

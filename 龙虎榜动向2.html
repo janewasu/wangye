@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>龙虎榜动向</title>
+		<link href="css/text.css" rel="stylesheet" type="text/css" />
+		<style type="text/css">						
+			p {margin:1px}
+			ul {margin:1px}			
+			.fixedBox{
+				border: 1px solid #555555;				
+				white-space: nowrap;	
+			}
+			.fixedBox::-webkit-scrollbar {
+				width: 10px;     
+				height: 10px;				
+			}
+			table{
+				width:380px; 
+				border-collapse:collapse; 
+				text-align:center;
+			}
+			td,th{border:1px solid #696969}				
+		</style>		
+		<script type="text/javascript" src="js/json2html.js"></script>
+		<script type="text/javascript" src="js/jquery.min.js"></script>
+		<script type="text/javascript" src="DatePicker/WdatePicker.js"> </script>		
+	</head>
+	<body>
+		<div id="towrite" class="fixedBox">
+			<div id="towrite1" class="fixedBox" style="position:relative; float:left;"></div>
+			<div id="towrite2" class="fixedBox" style="position:relative; float:left;"></div>
+			<div id="towrite3" class="fixedBox" style="position:relative; float:left;"></div>
+		</div>
+		<script>		
+			var bkcolor = $("body").css("backgroundColor");			
+			var dt = "";
+			var tt = "";
+			var gt = "";
+			var time = "";	
+			var k = 0;			
+			window.onload = function() {
+				var day = new Date();
+				gt = day.getTime();
+				mymonth = day.getMonth()+1;
+				myday = day.getDate();
+				if(mymonth >= 10){mymonth = mymonth;}else{mymonth = "0" + mymonth;}
+				if(myday >= 10){myday = myday;}else{myday = "0" + myday;}
+				tt = day.getFullYear() + "-" + mymonth + "-" + myday;	
+				dt = tt;
+				time = day.getTime(dt);
+				getSource();
+				changeStyle();
+			}
+			
+			function changeStyle() {
+				var obj = document.getElementById("towrite");				
+				obj.style.left= "0px"; 				
+				obj.style.width= "1500px";	
+				//obj.style.height= "620px";		
+				
+				var obj1 = document.getElementById("towrite1");				
+				obj1.style.left= "0px"; 				
+				obj1.style.width= "450px";	
+				//obj1.style.height= "400px";		
+				obj1.style.fontSize= "14px";	
+				
+				var obj2 = document.getElementById("towrite2");								
+				obj2.style.left= "0px"; 				
+				obj2.style.width= "400px";	
+				//obj1.style.height= "620px";		
+				obj2.style.fontSize= "14px";
+				
+				var obj3 = document.getElementById("towrite3");				
+				obj3.style.left= "0px"; 				
+				obj3.style.width= "400px";	
+				//obj2.style.height= "620px";		
+				obj3.style.fontSize= "14px";	
+			}
+			
+			
+			Date.prototype.Format = function (fmt) {
+			var o = {
+				"M+": this.getMonth() + 1, //月份
+				"d+": this.getDate(), //日
+				"h+": this.getHours(), //小时
+				"m+": this.getMinutes(), //分
+				"s+": this.getSeconds(), //秒
+				"q+": Math.floor((this.getMonth() + 3) / 3), //季度
+				"S": this.getMilliseconds() //毫秒
+			};
+			
+			if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+				for (var k in o)
+				if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+				return fmt;
+			};
+			
+			function keepTwoDecimal(num) {  
+               var result = parseFloat(num);  
+               if (isNaN(result)) {  
+                   //alert('传递参数错误，请检查！');  
+                   return false;  
+               }  
+               result = Math.round(num) / 100;  
+               return result;  
+			}
+			
+			function NumberTransform(num) { 
+				var result = parseFloat(num);
+				if (isNaN(result)) {                    
+				   return false;  
+				}  				
+				if(Math.abs(result) > 100000000){
+					result = result / 100000000;
+					result = result.toFixed(2) + "亿";
+				}else if(Math.abs(result) > 10000){
+					result = result/10000;
+					result = result.toFixed(0) + "万";
+				}
+				return result;  
+			}
+			
+			function cDayFunc(dp) { 
+				pn = -1;
+				var date = dp.cal.getNewDateStr();            
+				BookingRmk(date);//调用其它函数并带上参数                
+			}
+			
+			function BookingRmk(date){         
+				tt = date;				
+				tradeday();
+				getSource();						
+			}			
+			
+			function prev(){  //前一天
+				pn = -1;
+				var day = new Date(tt);	
+				day.setTime(day.getTime() - 24*60*60*1000);	
+				tt = day.Format("yyyy-MM-dd");
+				BookingRmk(tt);				
+			}
+			
+			function next(){  //后一天
+				pn = 1;
+				var day = new Date(tt);	
+				day.setTime(day.getTime() + 24*60*60*1000);	
+				var tt1 = day.Format("yyyy-MM-dd");
+				//alert(tt1)
+				var date1 = new Date(tt1);
+				var date2 = new Date(dt);						
+				if(date1.getTime() <= date2.getTime()){								
+					tt = tt1;
+					BookingRmk(tt);	
+				}			
+			}
+			
+			var pn = -1;
+			function tradeday() {  //判断最后交易日
+				var day = new Date(tt);
+				var daydt = new Date(dt);
+				
+				for (i = 1; i < 100; i++){	//节假日																										
+					if(i > 1){
+						day.setTime(day.getTime() + pn*24*60*60*1000);							
+					}	
+					tt = day.Format("yyyy-MM-dd");
+					//alert(tt);
+					
+					var res = [];
+					var url = "https://apphis.longhuvip.com/w1/api/index.php?a=GetYTFP_LHBDX&apiv=w31&c=FuPanLa&Date=" + tt;
+					$.ajax({
+						type: "get",
+						url: url,
+						dataType: "json",
+						async : false,
+						cache:false,
+						timeout:3000,						
+						success: function(data) {
+							//alert(JSON.stringify(data))
+							//document.write(JSON.stringify(data))
+							res = data.List;
+						}
+					});	
+					if(res.length > 0){
+						k = 1;
+						break;
+					}
+				}				
+			}	
+						
+			function getSource() {	
+				var div1 = document.getElementById('towrite1');
+				var div2 = document.getElementById('towrite2');
+				var div3 = document.getElementById('towrite3');
+				div1.innerHTML = '<font size="3" color="#FFFFFF">龙虎榜动向&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><input style="width: 90px;" type="text" id="PriceDate" name="PriceDate" class="Wdate" onFocus="WdatePicker({ onpicking: cDayFunc})" />';										
+				var back = '<a href="javascript:prev();"  style="padding-left:10px;font-size:16px;color:#fff;">←</a>';				
+				var forward = '<a href="javascript:next();"  style="font-size:16px;color:#fff;">→</a>';
+				
+				var url = "http://www.treeid/dlghttp://page.tdx.com.cn:7615/site/kggx/tk_ygzl_lhb.html?info=xxxxxx&amp;pageId=dpyd&amp;color=0&amp;bkcolor=000000"
+				var lhb = "<a href='" + url + "' style='margin-left:10px;color:#00FFFF;'>通达信龙虎榜</a>";													
+				div1.innerHTML += back + forward + lhb;
+				div1.innerHTML += "<p style='color:#FFFFFF;font-size:16px;'>全部上榜</p>";
+				div2.innerHTML = "";
+				div3.innerHTML = "<p style='color:#FFFFFF;font-size:16px;'>游资</p>";
+				var url1 = "https://apphq.longhuvip.com/w1/api/index.php?a=GetYTFP_LHBDX&apiv=w31&c=FuPanLa"; 
+				var url2 = "https://apphis.longhuvip.com/w1/api/index.php?a=GetYTFP_LHBDX&apiv=w31&c=FuPanLa&Date=" + tt;
+				var url = k > 0 ? url2 : url1;
+				var res = [];
+				$.ajax({
+					type: "get",
+					url: url,
+					dataType: "json",
+					async : false,
+					cache:false,
+					timeout:3000,						
+					success: function(data) {
+						//alert(JSON.stringify(data))
+						//document.write(JSON.stringify(data))
+						if(k == 0){
+							tt = data.Date;							
+							dt = tt;
+						}
+						res = data.List;												
+					}
+				});
+				
+				if(res.length > 0){
+					var ids = "";					
+					var resa = [];
+					for (var i = 0; i < res.length; i++){						
+						var arr1 = res[i].Buy;
+						var arr2 = res[i].Sell;
+						var arr = [];						
+						var mc = res[i].BName;						
+						var buys = 0;
+						var sells = 0;
+						for (var i1 = 0; i1 < arr1.length; i1++){						
+							var code = arr1[i1].Sto;
+							var buy = arr1[i1].Money;						
+							buys += buy;
+							var sell = 0;
+							var a = arr2.findIndex((v) => {  //(findIndex)判断数组有无指定对象   
+								return v.Sto ===  code;
+							});
+							if(a > -1){
+								var arrfind = arr2.find(function (item) {
+									return item.Sto == code
+								});
+								sell = arrfind.Money; 
+								sells += sell;								
+							}
+							var je = buy + sell;
+							arr.push({"代码":code,"名称":arr1[i1].StoN,"买入":buy,"卖出":sell,"净额":je})							
+							resa.push({"代码":code,"名称":arr1[i1].StoN,"买入":buy,"卖出":sell,"净额":je,"席位":mc})
+						}
+						
+						
+						for (var i2 = 0; i2 < arr2.length; i2++){
+							var code = arr2[i2].Sto;
+							sell = arr2[i2].Money;
+							var a = arr1.findIndex((v) => {  //(findIndex)判断数组有无指定对象   
+								return v.Sto ===  code;
+							});
+							if(a == -1){							
+								sells += sell;								
+								arr.push({"代码":code,"名称":arr2[i2].StoN,"买入":0,"卖出":sell,"净额":sell})								
+								resa.push({"代码":code,"名称":arr2[i2].StoN,"买入":buy,"卖出":sell,"净额":sell,"席位":mc})
+							}						
+						}
+						
+						function up(a,b){
+							var aa = a.净额;
+							var bb = b.净额;
+							return bb - aa					
+						}
+						arr.sort(up);
+						
+						function up1(a,b){
+							var aa = a.代码;
+							var bb = b.代码;
+							return aa - bb					
+						}
+						resa.sort(up1);						
+						//document.write(JSON.stringify(arr));
+						
+						//var name = "<a style='color:#FFFF88;font-size:16px' href='javascript:void(0)' id='id" + mc + "' onclick='update(\"" + mc + "\")'>" + mc + "<span style='font-size:14px;color:#fff'>（买入：" + NumberTransform(buys) + " 卖出：" + NumberTransform(sells) + "）</span></a>";						
+						var name = "<p style='color:#FFFF88;font-size:16px'  id='id" + mc + "'>" + mc + "<span style='font-size:14px;color:#fff'>（买入：" + NumberTransform(buys) + " 卖出：" + NumberTransform(sells) + "）</span></p>";						
+						
+						if(mc == "机构"){
+							div2.innerHTML += "<p style='margin-left:5px;'>" + name + "</p>";
+							var newDiv = document.createElement("div");
+							newDiv.id = mc;
+							newDiv.style.display = "block";							
+							div2.appendChild(newDiv);
+						}else{							
+							div3.innerHTML += "<p style='margin-left:5px;'>" + name + "</p>";
+							var newDiv = document.createElement("div");
+							newDiv.id = mc;
+							newDiv.style.display = "block";							
+							div3.appendChild(newDiv);						
+						}
+						tables(arr,mc);						
+					}
+					//document.write(JSON.stringify(resa));
+					tables(resa,"towrite1");	
+					
+					for(var i = 0; i < res.length; i++){
+						var table = document.getElementsByTagName("table")[i];					
+						makeSortable(table,i);
+						hover();
+					}	
+				}else{
+					div1.innerHTML += "<p style='font-size:20px;'>暂无数据</p>";
+				}
+				document.getElementById("PriceDate").value = tt;
+			}
+			
+			var gl = "净额";  //高亮
+			function tables(data,id) {						
+				if(data.length > 0){	
+					var json = data;
+					
+					//创建table					
+					var table=document.createElement("table");										
+					var thead=document.createElement("thead");
+					table.appendChild(thead);					
+					var tr=document.createElement("tr");
+					thead.appendChild(tr);					
+					
+					var m = 0;
+					var n = 0;										
+					for(var key in json[0]){  //表头
+						key = key.replace('Sto','代码').replace('StoN','名称').replace('Money','净额');
+						var th=document.createElement("th");						
+						th.innerHTML=key;						
+						tr.appendChild(th);
+						if(gl == key.replace("%","")){
+							n = m;
+							th.style.color = "#FF6633";	
+						}						
+						m++;
+					}							
+					var tbody=document.createElement("tbody");					
+					table.appendChild(tbody);
+					
+					//遍历json
+					for(var i = 0; i < json.length; i++){					
+						var tr=document.createElement("tr");						
+						var p = 1;
+						var dm = "";
+						var mc = "";
+						for(var key in json[i]){ //行元素遍历						
+							var td=document.createElement("td");							
+							
+							var rc = json[i][key];
+							if(p == 1){  //代码列
+								dm = rc;
+								tr.id = id + "#" + dm;
+							}else if(p >= 3 && p < 6){
+								rc = NumberTransform(rc);
+							}					
+							td.innerHTML = "<a href=http://www.treeid/code_" + dm + " id='" + p + "' onclick='changeCss(this,\"" + tr.id + "\",\"towrite\")'>" + rc + "</a>";
+							
+							if(p == n + 1){														
+								var value = parseFloat(JSON.stringify(rc).replace('万','').replace('亿','').replace(/"/,''));							
+								if(value >= 0){
+									td.getElementsByTagName("a")[0].style.color = "#FF6633";
+								}else{
+									td.getElementsByTagName("a")[0].style.color = "#00FF00";
+								}							
+							}
+						
+							tr.appendChild(td);							
+							p++;
+						}													
+						tbody.appendChild(tr);																
+					}
+					
+					var div1 = document.getElementById(id);												
+					div1.appendChild(table);
+					table.id = "table" + id;										
+				}						
+			}
+			
+			//隐藏某列				
+            function changeTable(table,ss) {	
+				var trs = table.rows;
+				ss = ss + '#';
+				var aa = ss.split('#');
+				for (var j = 0; j < aa.length; j++) {
+					if(aa[j] != ""){
+						for (var i = 0, len = trs.length; i < len; i++) {					
+							var p = aa[j];
+							var cell = trs[i].cells[p]; 
+							cell.style.display = 'none';
+						}
+					}
+				}					
+			}
+			
+			function makeSortable(table,p) {
+				var headers=table.getElementsByTagName("th");
+				for(var i=0;i<headers.length;i++){				
+					(function(n){
+						var flag=false;
+							
+						headers[n].onclick=function(){
+							gl = headers[n].textContent;
+							showCol(n,[],p);		//高亮
+							var tbody=table.tBodies[0];
+							var rows=tbody.getElementsByTagName("tr");
+							rows=Array.prototype.slice.call(rows,0);
+
+							//基于第n个<td>元素的值对行排序
+							rows.sort(function(row1,row2){
+								headtxt = headers[n].textContent;								
+								var cell1=row1.getElementsByTagName("td")[n];//获得第n个单元格
+								var cell2=row2.getElementsByTagName("td")[n];																
+								var val1=cell1.textContent||cell1.innerText;//获得文本内容
+								var val2=cell2.textContent||cell2.innerText;
+								if(headtxt.indexOf("名称") != -1 || headtxt.indexOf("席位") != -1){
+									val1 = val1;
+									val2 = val2;
+								}else{
+									
+									if(val1.indexOf("万") != -1){
+										val1 = parseFloat(val1)*10000;
+									}else if(val1.indexOf("亿") != -1){
+										val1 = parseFloat(val1)*100000000;
+									}else{
+										val1 = parseFloat(val1);
+									}
+									
+									if(val2.indexOf("万") != -1){
+										val2 = parseFloat(val2)*10000;
+									}else if(val2.indexOf("亿") != -1){
+										val2 = parseFloat(val2)*100000000;
+									}else{
+										val2 = parseFloat(val2);
+									}
+								}
+								if(val1<val2){
+									return -1;
+								}else if(val1>val2){
+									return 1;
+								}else{
+									return 0;
+								}
+							});
+							if(flag){
+								rows.reverse();
+							}
+							
+							for(var i=0;i<rows.length;i++){
+								tbody.appendChild(rows[i]);
+							}
+
+							flag=!flag;
+						}
+					}(i));
+				}
+			}
+			
+			function showCol(iCol,arr,p){	 //(选中列，标记列)	
+				var oTable = document.getElementsByTagName('table')[p];						
+				//表头
+				var th = oTable.getElementsByTagName("th");						
+				for (var i=0;i < th.length; i++){	    //列遍历
+					th[i].style.color = "#E5E5E5";      //还原					
+					if(arr.length > 0 && arr.indexOf(i) > -1){  //BJ列高亮
+						th[i].style.color = "#FFA500";
+					}
+					th[iCol].style.color = "#FFFF80";	//选中				
+				}
+				
+				var tr = oTable.getElementsByTagName("tr");	
+				for (var i=1;i < tr.length; i++){	//行遍历
+					var otagsA = tr[i].getElementsByTagName("a");
+					for (var j=0;j < otagsA.length; j++){	//列遍历
+						otagsA[j].style.color = "#E5E5E5";	//还原																
+						if(arr.length > 0 && arr.indexOf(j) > -1){  //BJ列高亮
+							otagsA[j].style.color = "#FFA500";
+						}
+					}
+					var value = otagsA[iCol].innerText.replace(/(万)|(亿)/g,'');
+					if(!isNaN(parseFloat(value)) && isFinite(value)){  //判断列是否为数字
+						if(parseFloat(value) >= 0){
+							otagsA[iCol].style.color = "#FF6633";     //正负颜色
+						}else{
+							otagsA[iCol].style.color = "#00FF00";
+						}
+					}else{
+						otagsA[iCol].style.color = "#FF6633";
+					}					
+				}					
+			}	
+			
+			var trid = "";
+			var ty = "";
+			function changeCss(obj,hid,id){	
+				ty = hid.split("#")[1];
+				var tlist = document.getElementById(id).getElementsByTagName("tr");					
+				for(var i = 0; i < tlist.length; i++){
+					var dm = tlist[i].id.split("#")[1];
+					if(dm == ty){
+						tlist[i].style.backgroundColor = "#800080";
+					}else{
+						tlist[i].style.backgroundColor = bkcolor;
+					}					
+				}
+				trid = hid;
+				
+				var tr = document.getElementById(hid);				
+				tr.style.backgroundColor = "#483D8B";						
+			}
+			
+			function hover(){ 
+				var rows = document.getElementsByTagName('tr');
+				for(var i=0;i<rows.length;i++){
+					rows[i].onmouseover=function(){						
+						if(this.id != ""){  //过滤表头
+							this.style.background="#800000";
+						}
+					}
+					rows[i].onmouseout=function(){
+						if(this.id != ""){  //过滤表头
+							var dm = this.id.split("#")[1];							
+							if(this.id == trid){									
+								this.style.background="#483D8B";
+							}else if(dm == ty){
+								this.style.background="#800080";	
+							}else{
+								this.style.background = bkcolor;
+							}							
+						}
+					}					
+				}
+			}
+			
+			var temp = "";	
+			function update(ss) {	
+				//alert(temp)
+				if(document.getElementById(ss)){					
+					div1 = document.getElementById(ss);
+					if(temp.indexOf(ss) == -1){
+						temp += ss + ";";
+						div1.style.display = "block";
+					}else{
+						temp = temp.replace(ss + ";" , "");
+						div1.style.display = "none";
+					}
+				}											
+			}
+			
+		</script>
+	
+	</body>
+</html>

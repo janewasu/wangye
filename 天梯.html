@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>连板天梯</title>
+		<link href="css/text.css" rel="stylesheet" type="text/css" />
+		<style type="text/css">						
+			#towriter{
+				margin-top:-15px;
+				border: 0px solid #555555;				
+			}			
+			.fixedBox{					
+				white-space: nowrap;
+			}
+			.fixedBox::-webkit-scrollbar {
+				width: 4px;     
+				height: 4px;				
+			}			
+			p {margin-top:0px;margin-bottom:5px}				
+			
+			table{
+				width:60px; 
+				border-collapse:collapse; 
+				text-align:center;				
+			}
+			td,th{border:1px solid #696969;}			
+			th { 
+				color:#E1FFFF;  <!-- 表头文字颜色 -->
+			}
+			td a:link{
+				color:#E1FFFF;  <!-- 列表文字颜色 -->
+			}
+		</style>		
+	</head>
+	<body>		
+		<div id="towriter" class="fixedBox" style="display:none;">			
+			<div id="bar" style="margin:10px 50px -5px 5px;"></div>			
+			<div id="towrites" class="fixedBox" style="position:relative; border:none;">		
+		</div>
+		
+		<script type="text/javascript" src="js/json2html.js"></script>
+		<script type="text/javascript" src="js/jquery.min.js"></script>
+		<script type="text/javascript" src="DatePicker/WdatePicker.js"> </script> 
+		<script>
+			var bkcolor = $(".fixedBox").css("backgroundColor");			
+			var thcolor = "";
+			var tdcolor = "";
+			var g = 1;  //不要1板改为0  ,要点"清除缓存"
+			var day = new Date();
+			var dt = "";  //当日			
+			var tt = "";
+			var tt1 = "";
+			var tz = "";  //最后交易日
+			var k = 0;				
+			window.onload = function() {
+				dt = day.Format("yyyy-MM-dd");
+				changeStyle();
+				getSource();								
+			}
+			
+			function time_range(beginTime, endTime) {
+				var strb = beginTime.split(":");
+				if (strb.length != 2) {
+					return false;
+				}
+
+				var stre = endTime.split(":");
+				if (stre.length != 2) {
+					return false;
+				}
+
+				var b = new Date();
+				var e = new Date();
+				var n = new Date();
+
+				b.setHours(strb[0]);
+				b.setMinutes(strb[1]);
+				e.setHours(stre[0]);
+				e.setMinutes(stre[1]);
+
+				if (n.getTime() - b.getTime() > 0 && n.getTime() - e.getTime() < 0) {
+					//day = new Date();
+					getSource();
+					console.log(true)　　　　　　
+					return true;				
+				} else {
+					console.log(false)
+				    return false;     
+				}
+			}　　　
+   　　　
+			$(function() {
+				setInterval(function() {					
+					if(k == 0){		//最后交易日才刷新		
+						time_range("9:00","15:15")	
+					}	
+				},
+				60000);
+			})
+			
+			function changeStyle() {
+				var obj = document.getElementById("towriter");	
+				obj.style.display= "block"; 
+				obj.style.left= "0px"; 				
+				obj.style.width= "100%";
+				
+				var div = document.getElementById("towrites");
+				div.style.left= "0px"; 				
+				div.style.width= "99%";	//总宽度
+				
+				for (i = 1; i < 6; i++){
+					var obj = document.createElement("div");
+					obj.id = "towrite" + i;
+					obj.className = "fixedBox";
+					obj.style.position= "relative"; 
+					obj.style.float= "left"; 
+					obj.style.left= "0px"; 	
+					obj.style.marginLeft= "1px"; 
+					obj.style.width= "248px";     //板块列表宽度					
+					obj.style.fontSize="12px";	
+					//obj.style.border= "1px solid #fff";
+					div.appendChild(obj);					
+				}					
+			}					
+			
+			function keepTwoDecimal(num) {  
+               var result = parseFloat(num);  
+               if (isNaN(result)) {  
+                   //alert('传递参数错误，请检查！');  
+                   return false;  
+               }  
+               result = Math.round(num * 100) / 100;  
+               return result;  
+			};			
+			
+			function NumberTransform(num) { 
+				var result = parseFloat(num);
+				if (isNaN(result)) {                    
+                   return false;  
+               }  				
+               if(Math.abs(result) > 100000000){
+				result = result / 100000000;
+				result = result.toFixed(2) + "亿";
+			   }else if(Math.abs(result) > 10000){
+			    result = result/10000;
+				result = result.toFixed(0) + "万";
+			   }
+               return result;  
+			};
+			
+			Date.prototype.Format = function (fmt) {
+				var o = {
+				"M+": this.getMonth() + 1, //月份
+				"d+": this.getDate(), //日
+				"h+": this.getHours(), //小时
+				"m+": this.getMinutes(), //分
+				"s+": this.getSeconds(), //秒
+				"q+": Math.floor((this.getMonth() + 3) / 3), //季度
+				"S": this.getMilliseconds() //毫秒
+				};
+				if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+				for (var k in o)
+				if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+				return fmt;
+			};
+			
+			function cDayFunc(dp) { 
+				var date = dp.cal.getNewDateStr();            
+				BookingRmk(date);//调用其它函数并带上参数                
+			}
+			
+			function BookingRmk(date){         				
+				tt1 = date;					
+				var date1 = new Date(tt1);
+				var date2 = new Date(tz);
+				if(date1.getTime() <= date2.getTime()){			
+					day = new Date(tt1);				
+					a = 0;  //切换日期，清零
+					getSource();	
+				}else{
+					tt1 = tz;
+				}				
+			}
+			
+			var pn = -1;
+			function prev(){  //前一天
+				pn = -1;
+				var day = new Date(tt1);	
+				day.setTime(day.getTime() - 24*60*60*1000);	
+				tt1 = day.Format("yyyy-MM-dd");				
+				BookingRmk(tt1);
+			}
+			
+			function next(){  //后一天 								
+				pn = 1;
+				var day = new Date(tt1);	
+				day.setTime(day.getTime() + 24*60*60*1000);	
+				tt1 = day.Format("yyyy-MM-dd");				
+				BookingRmk(tt1);							
+			}
+						
+			var rqs = ""; //判断交易日用(缓存)
+			var datahq = "";
+			var a = 0; 
+			var b = 0;
+			function getSource() {	
+				datahq = "";
+				var div = document.getElementById("bar");
+				var qh = "<a style='position:absolute; right:30px;' href='javascript:void(0)' onclick='clearstorage()'>" + "清除缓存" + "</a>";
+				div.innerHTML = '<font color=#FF8C00; size="3">东财天梯<font size="1">&nbsp;&nbsp;&nbsp;&nbsp;' + qh + '</font></font><input style="width: 90px;" type="text" id="PriceDate" name="PriceDate" class="Wdate" onFocus="WdatePicker({ onpicking: cDayFunc})" />';		
+				var back = '<a href="javascript:prev();"  style="padding-left:10px;font-size:16px;color:#fff;">←</a>';	
+				var forward = '<a href="javascript:next();"  style="font-size:16px;color:#fff;">→</a>';
+				var kptt = '<a href="http://hot.icfqs.com:7615/site/tdx-pc-hqpage/page-lbtt.html?color=0&bkcolor=141212"  style="font-size:16px;color:#fff;">通达天梯</a>';
+
+				var ggxw = "<a href='http://www.treeid/dlglocalurlD:/分析家插件/八面来风(定).html##xxxxxx####STOCKNAME##&tdxmyietitle=SL666&tdxmyieleft=658&tdxmyietop=119&tdxmyiewidth=848&tdxmyieheight=788&noborder=0&closenoactive=1&padmode=0' style='position:absolute; right:240px;font-size:14px;'>个股新闻</a>";
+			var ggxq = "<a href='http://www.treeid/dlglocalurlD:/分析家插件/异动解析(个股).html##xxxxxx####STOCKNAME##&tdxmyietitle=SL666&tdxmyieleft=48&tdxmyietop=62&tdxmyiewidth=998&tdxmyieheight=928&noborder=0&closenoactive=1&padmode=0' style='position:absolute; right:170px;font-size:14px;'>异动解析</a>";
+				div.innerHTML += back + forward +kptt  + ggxq + ggxw;
+				
+				var div1 = document.getElementById('towrite1');	
+				var url = "";	
+				
+				if(tt1 != ""){
+					day = new Date(tt1);
+					day.setTime(day.getTime());					
+				}
+				for (i = 1; i < 100; i++){							
+					if(i > 1){
+						day.setTime(day.getTime() + pn*24*60*60*1000);							
+					}
+					
+					tt1 = day.Format("yyyy-MM-dd");	
+					//alert(tt1)
+					url = "http://push2ex.eastmoney.com/getTopicZTPool?cb=callbackdata1207668&ut=7eea3edcaed734bea9cbfc24409ed989&dpt=wz.ztzt&Pageindex=0&pagesize=1000&sort=lbc%3Adesc&date=" + tt1.replace(/-/g,""); 										
+					var res1 = [];
+					$.ajax({
+						type: "get",
+						url: url,
+						dataType: "text",
+						async : false,
+						cache:false,
+						timeout:3000,						
+						success: function(data) {
+							//document.write(data);	
+							res1 = data;										
+						}
+					});
+					//if(res1.indexOf('"data":null') == -1){	
+					if(res1.indexOf('"pool":[]') == -1){					
+						if(tz == ""){
+							tz = tt1;							
+
+						}
+						rqs = tt1 + ";";										
+						break;
+					}
+				}
+				
+				if(tt1 == tz){
+					k = 0;
+				}else{
+					k = 1;
+				}
+				
+				div1.innerHTML = "<span style='color:#FFFF00'>" + tt1 + "</span>";
+				document.getElementById("PriceDate").value = tt1;	
+				var res = [];
+				$.ajax({
+					type: "get",
+					url: url,
+					dataType: "text",
+					async : false,
+					cache:false,
+					timeout:3000,						
+					success: function(data) {												
+						data = data.replace(/ /g,"").match(/"pool":(\S*)\}\}\);/)[1];
+						//document.write(data);	
+						var arr = JSON.parse(data);;						
+						for (var i = 0; i < arr.length; i++){
+							var lb = arr[i]["lbc"];
+							if(g == 1){
+								res.push({"c":arr[i]["c"],"n":arr[i]["n"],"fund":NumberTransform(arr[i]["fund"]),"lbc":lb,"hybk":arr[i]["hybk"]})
+							}else if(g == 0 && parseInt(lb) > 1){
+								res.push({"c":arr[i]["c"],"n":arr[i]["n"],"fund":NumberTransform(arr[i]["fund"]),"lbc":lb,"hybk":arr[i]["hybk"]})
+							}
+						}
+					}
+				});
+				
+				datahq = JSON.stringify(res);
+													
+				if(datahq != ""){				
+					Ctable(datahq,"towrite1");					
+					var table = div1.getElementsByTagName("table")[0];
+					makeSortable(table);
+				}
+				
+				thcolor = $("th").css("color");				
+				tdcolor = $("td a:first").css("color");		
+				
+				for (i = 1; i < 6; i++){  
+					$("#towrite" + i).scrollTop(0);  //回到顶部
+				}
+				
+				if(dt == tt1 && b == 0){ //竞价后切换
+					a = 0;
+					b++;
+				}
+				a++;
+				if(a == 1){  //刷新或竞价后执行一次				
+					gethis(); //交易日推算
+				}else{					
+					rdbj();
+				}			
+			}
+						
+			function gethis() {
+				hdates = ""; 
+				if(localStorage.getItem('dclbttrq') != null) {  //判断有无缓存日期
+					var t = localStorage.getItem('dclbttrq'); //取缓存日期
+					if(t.split(";")[0] != tt1){  //如果缓存首日不等于最后交易日，重新计算
+						for (j = 1; j < 5; j++){															
+							gethisdata();
+							var div = document.getElementById("towrite" + (j + 1));	
+							div.innerHTML = "<span style='color:#FFFF00'>" + tt + "</span>";	
+							Ctable(datahis,"towrite" + (j + 1));
+							hdates += datahis;
+							var table = div.getElementsByTagName("table")[0];
+							makeSortable(table);
+						}
+						localStorage.setItem('dclbttrq', rqs);  //交易日期写入缓存
+					}else{  //否则取缓存数据
+						for (i = 1; i < 5; i++){
+							var div = document.getElementById("towrite" + (i + 1));
+							tt = t.split(";")[i];
+							div.innerHTML = "<span style='color:#FFFF00'>" + tt + "</span>";
+							datahis = localStorage.getItem('dclbtt' + tt);
+							Ctable(datahis,"towrite" + (i + 1));
+							hdates += datahis;	
+							var table = div.getElementsByTagName("table")[0];
+							makeSortable(table);
+						}				
+					}				
+				}else{   //首次
+					for (j = 1; j < 5; j++){										
+						gethisdata();
+						var div = document.getElementById("towrite" + (j + 1));	
+						div.innerHTML = "<span style='color:#FFFF00'>" + tt + "</span>";	
+						Ctable(datahis,"towrite" + (j + 1));
+						hdates += datahis;
+						var table = div.getElementsByTagName("table")[0];
+						makeSortable(table);
+					}					
+					localStorage.setItem('dclbttrq', rqs);  //交易日期写入缓存
+				}				
+				rdbj();									
+			}
+			
+			var datahis = "";	
+			function gethisdata() {				
+				datahis = "";
+				//day.setTime(day.getTime());				
+				for (i = 1; i < 100; i++){	//节假日																										
+					day.setTime(day.getTime() - 24*60*60*1000);
+					tt = day.Format("yyyy-MM-dd");
+					
+					var url = "http://push2ex.eastmoney.com/getTopicZTPool?cb=callbackdata1207668&ut=7eea3edcaed734bea9cbfc24409ed989&dpt=wz.ztzt&Pageindex=0&pagesize=1000&sort=lbc%3Adesc&date=" + tt.replace(/-/g,""); 										
+					var res1 = [];
+					$.ajax({
+						type: "get",
+						url: url,
+						dataType: "text",
+						async : false,
+						cache:false,
+						timeout:3000,						
+						success: function(data) {
+							//document.write(data);	
+							res1 = data;										
+						}
+					});
+					//if(res1.indexOf('"data":null') == -1){
+					if(res1.indexOf('"pool":[]') == -1){
+						//alert(tt)					
+						rqs += tt + ";"						
+						if(localStorage.getItem('dclbtt' + tt) != null) {   //判断有无缓存数据														
+							datahis = localStorage.getItem('dclbtt' + tt);    //取缓存数据							
+						}else{							
+							var res = [];
+							$.ajax({
+								type: "get",
+								url: url,
+								dataType: "text",
+								async : false,
+								cache:false,
+								timeout:3000,						
+								success: function(data) {												
+									data = data.replace(/ /g,"").match(/"pool":(\S*)\}\}\);/)[1];
+									//document.write(data);	
+									var arr = JSON.parse(data);;						
+									for (var i = 0; i < arr.length; i++){
+										var lb = arr[i]["lbc"];
+										if(g == 1){
+											res.push({"c":arr[i]["c"],"n":arr[i]["n"],"fund":NumberTransform(arr[i]["fund"]),"lbc":lb,"hybk":arr[i]["hybk"]})
+										}else if(g == 0 && parseInt(lb) > 1){
+											res.push({"c":arr[i]["c"],"n":arr[i]["n"],"fund":NumberTransform(arr[i]["fund"]),"lbc":lb,"hybk":arr[i]["hybk"]})
+										}
+									}
+								}
+							});
+							datahis = JSON.stringify(res);
+							//datahis = datahis.replace(/\}\]\[\{/g,"},{");							
+							localStorage.setItem('dclbtt' + tt, datahis);  //历史单日数据写入缓存
+						}																				
+						break;						
+					}
+				}				
+			}
+			
+			function Ctable(ss,id){			
+				var m = 0;
+				var l = 0;
+				var gl = 0;			
+				var json = JSON.parse(ss);				
+				//创建table					
+				var table=document.createElement("table");										
+				var thead=document.createElement("thead");
+				table.appendChild(thead);					
+				var tr=document.createElement("tr");
+				thead.appendChild(tr);					
+																				
+				for(var key in json[0]){  //表头
+					key = key.replace('fund','封单额').replace('lbc','连板').replace('hybk','所属行业').replace('name','名称').replace('c','代码').replace('n','名称');
+					key = key.replace('zf','涨幅%').replace('hsl','换手%');					
+					var th=document.createElement("th");						
+					th.innerHTML=key;						
+					tr.appendChild(th);	
+					//th.style.color = "#E1FFFF";
+					if(key == "连板"){												
+						th.style.color = "#FFA500";	
+						l = m;						
+					}
+					
+					if(key == "涨幅%"){												
+						th.style.color = "#FF6633";	
+						gl = m;
+					}
+					m++;					
+				}
+									
+				var tbody=document.createElement("tbody");					
+				table.appendChild(tbody);
+				
+				//遍历json
+				for(var i = 0; i < json.length; i++){					
+					var tr=document.createElement("tr");						
+					var p = 1;
+					var dm = "";
+					var mc = "";
+					for(var key in json[i]){ //行元素遍历						
+						var td=document.createElement("td");							
+						
+						var rc = json[i][key];
+						if(p == 1){  //代码列
+							dm = rc;
+							tr.id = dm + id;
+						}else if(p == 2){  //名称列
+							mc = rc;								
+						}	
+						td.innerHTML = "<a href=https://gushitong.baidu.com/stock/ab-" + dm + " id='" + p + "' style='float:left;'  onclick='changeCss(this,\"" + dm + id + "\",\"" + id + "\")'>" + rc + "</a>";																										
+						//td.getElementsByTagName("a")[0].style.color = "#E1FFFF";
+						if(gl != 0 && p == gl + 1){
+						
+							td.getElementsByTagName("a")[0].style.color = "#FF6633";
+						}
+						if(p == l + 1){														
+							td.getElementsByTagName("a")[0].style.color = "#FFA500";
+						}					
+						tr.appendChild(td);							
+						p++;
+					}																																	
+					tbody.appendChild(tr);												
+				}
+				var div = document.getElementById(id);					
+				div.appendChild(table);
+				table.id = id;				
+				changeTable(table,'0');		//隐藏某列	
+				hover();				
+			}
+			
+			//隐藏某列				
+            function changeTable(table,ss) {	
+				var trs = table.rows;
+				ss = ss + '#';
+				var aa = ss.split('#');
+				for (var j = 0; j < aa.length; j++) {
+					if(aa[j] != ""){
+						for (var i = 0, len = trs.length; i < len; i++) {					
+							var p = aa[j];
+							var cell = trs[i].cells[p]; 
+							cell.style.display = 'none';
+						}
+					}
+				}					
+			}
+			
+			//方式1		
+			var pid = "";
+			function changeCss1(obj,hid,id){						
+				var tlist = document.getElementById(id).getElementsByTagName("tr");					
+				for(var i = 0; i < tlist.length; i++){														
+					tlist[i].style.backgroundColor = bkcolor; 					
+				}	
+				
+				//5组选中行id集合
+				if(pid.indexOf(id) > -1){				
+					var aa = "";				
+					var ss = pid.split(";");
+					for(i = 0; i < ss.length-1; i++){
+						if(ss[i].indexOf(id) > -1){						
+							aa += hid + ";";
+						}else{
+							aa += ss[i] + ";";
+						}				
+					}
+					pid = aa;
+				}else{
+					pid += hid + ";";
+				}
+				
+				var tr = document.getElementById(hid);				
+				tr.style.backgroundColor = "#483D8B";						
+			}
+			
+			//方式2：相同行高亮
+			function changeCss(obj,hid,id){				
+				var tlist = document.getElementById("towriter").getElementsByTagName("tr");					
+				for(var i = 0; i < tlist.length; i++){														
+					tlist[i].style.backgroundColor = bkcolor; 					
+				}	
+								
+				pid = "";				
+				var dm = hid.split("towrite")[0];				
+				for(var i = 0; i < tlist.length; i++){
+					var a = tlist[i].id;					
+					if(tlist[i].id.split("towrite")[0] == dm){						
+						var ids = tlist[i].id.replace(dm,"");						
+						if(ids != id){  //被点击行不滚动
+							$("#" + ids).scrollTop (0);												
+							var y = getTop(tlist[i]);  //纵坐标
+							var div = document.getElementById(ids);						
+							if(y > div.clientHeight){						
+								$("#" + ids).scrollTop (y - 100);  //控制滚动条
+							}
+						}
+						tlist[i].style.backgroundColor = "#483D8B";						
+						pid += tlist[i].id + ";";
+					}					
+				}					
+			}
+			
+			//获取元素的纵坐标 
+			function getTop(e){ 
+				var offset=e.offsetTop; 
+				if(e.offsetParent!=null) offset+=getTop(e.offsetParent);				
+				return offset; 
+			} 			
+
+			function hover(){  //鼠标经过			
+				var rows = document.getElementsByTagName('tr');
+				for(var i=0;i<rows.length;i++){
+					rows[i].onmouseover=function(){						
+						if(this.id != ""){  //过滤表头
+							this.style.background="#800000";
+						}
+					}
+					rows[i].onmouseout=function(){
+						if(this.id != ""){  //过滤表头							
+							if(pid.indexOf(this.id) == -1){  //过滤选中行
+								this.style.background = bkcolor;
+							}else{
+								this.style.background ="#483D8B";
+							}
+						}						
+					}					
+				}
+			}			
+			
+			function clearstorage(){									
+				if(localStorage.getItem('dclbttrq') != null){						
+					localStorage.removeItem('dclbttrq'); //清除缓存localStorage
+				}
+				
+				var n = 1;
+				while (n > 0)
+				{	
+					var p = 1;				
+					var q = p;
+					for (var i = 0; i < localStorage.length; i++) { 
+						var key = localStorage.key(i);		 				
+						if(key.indexOf('dclbtt') > -1){
+							localStorage.removeItem(key);	
+							p++;
+						}	
+					}
+					n = p - q;
+					//alert(n);
+				}
+				alert('清除完成');
+			}
+			
+			function rdbj() {		//高亮标记	
+				var dms = "";
+				var tlist = document.getElementById("towrites").getElementsByTagName("tr");
+				for(var i = 1; i < tlist.length; i++){
+					if(tlist[i].id != ""){
+						dms += tlist[i].id.split('towrite')[0] + ",";
+					}
+				}
+				
+				<!-- 全部标记 -->
+				for(var i = 1; i < tlist.length; i++){
+					var dm = tlist[i].id.split('towrite')[0];
+					if(dms.indexOf(dm) > -1 && dm != ""){
+						var ss = dms.split(dm);	
+						if(ss.length - 1 >= 5){																									
+							tlist[i].style.border = "2px solid #FF0000";							
+							//tlist[i].getElementsByTagName("a")[1].style.color = "#FF0000";
+						}else if(ss.length - 1 == 4){							
+							tlist[i].style.border = "2px solid #FF00FF";
+							//tlist[i].getElementsByTagName("a")[1].style.color = "#FF00FF";
+						}
+					}					
+				}
+				
+					
+			}
+			
+			
+
+			function makeSortable(table) {			
+				var headers=table.getElementsByTagName("th");
+				for(var i=0;i<headers.length;i++){				
+					(function(n){
+						var flag=false;
+							
+						headers[n].onclick=function(){
+													
+							showCol(table,n);		//高亮
+							var tbody=table.tBodies[0];
+							var rows=tbody.getElementsByTagName("tr");
+							rows=Array.prototype.slice.call(rows,0);
+
+							//基于第n个<td>元素的值对行排序
+							rows.sort(function(row1,row2){
+								headtxt = headers[n].textContent;								
+								var cell1=row1.getElementsByTagName("td")[n];//获得第n个单元格
+								var cell2=row2.getElementsByTagName("td")[n];																
+								var val1=cell1.textContent||cell1.innerText;//获得文本内容
+								var val2=cell2.textContent||cell2.innerText;
+								if(headtxt.indexOf("名称") != -1 || headtxt.indexOf("连板") != -1 || headtxt.indexOf("涨停原因") != -1){
+									val1 = val1;
+									val2 = val2;
+								}else{											
+									if(val1.indexOf("万") != -1){
+										val1 = parseFloat(val1)*10000;
+									}else if(val1.indexOf("亿") != -1){
+										val1 = parseFloat(val1)*100000000;
+									}else{
+										val1 = parseFloat(val1);
+									}
+									
+									if(val2.indexOf("万") != -1){
+										val2 = parseFloat(val2)*10000;
+									}else if(val2.indexOf("亿") != -1){
+										val2 = parseFloat(val2)*100000000;
+									}else{
+										val2 = parseFloat(val2);
+									}
+								}
+								if(val1<val2){
+									return -1;
+								}else if(val1>val2){
+									return 1;
+								}else{
+									return 0;
+								}
+							});
+							if(flag){
+								rows.reverse();
+							}
+							
+							for(var i=0;i<rows.length;i++){
+								tbody.appendChild(rows[i]);
+							}
+
+							flag=!flag;
+						}
+					}(i));
+				}
+			}
+			
+			function showCol(table,iCol){			
+				var oTable = table;
+				var id = oTable.id;
+				for (i=0;i < oTable.rows.length; i++){										
+					for (j=0;j < oTable.rows[0].cells.length; j++){
+						//alert(oTable.rows[i].cells[3].innerText)
+						oTable.rows[i].cells[j].style.color = thcolor;
+						//if(oTable.id != "towrite6"){
+							oTable.rows[i].cells[3].style.color = "#FFA500";
+						//}						
+					}
+					oTable.rows[i].cells[iCol].style.color = "#FF6633";					
+				}
+				
+				var otagsA = oTable.getElementsByTagName("a");  //a变色
+				for (i = 0; i < otagsA.length; i++) {
+					otagsA[i].style.color = tdcolor;
+					if(otagsA[i].id == 4){
+						otagsA[i].style.color = "#FFA500";
+					}	
+					if(otagsA[i].id == iCol + 1){
+						otagsA[i].style.color = "#FF6633";
+					}
+				}				
+			}
+		</script>
+		
+	</body>
+</html>

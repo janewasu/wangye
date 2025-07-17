@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>直播</title>
+		<link href="css/text.css" rel="stylesheet" type="text/css" />
+		<style type="text/css">				
+			p {
+				margin:5px 0px 0px 0px;
+				font-size:14px;
+			}
+			ul {margin:1px 0px 0px -10px}			
+			h4 {margin:1px}	
+			.fixedBox{
+				border: 1px solid #555555;				
+			}
+			.fixedBox::-webkit-scrollbar {
+				width: 10px;     
+				height: 10px;				
+			}	
+			/* 修改市场情绪的样式 */
+            #towrite2 {
+            font-weight: bold; /* 加粗字体 */
+            }		
+			.towrite2 .number {
+            color: #FF5733; /* 数字颜色 */
+        }
+			/* 分时图和K线图 */
+			#stock_charts {     
+            display: none;
+            position: fixed;
+            right: 0px;  /* 距离页面右侧0像素 */
+            top: 0;    /* 距离页面顶部0像素 */
+
+            border: 1px solid #ccc;
+            background: #fff;
+            z-index: 1000;
+        }
+        #kxiantu, #fenshitu {
+            height: 280px;
+            overflow: hidden;
+        }
+		/* /分时图和K线图 */		
+		</style>		
+		<script type="text/javascript" src="js/json2html.js"></script>
+		<script type="text/javascript" src="js/jquery.min.js"></script>
+		<script type="text/javascript" src="DatePicker/WdatePicker.js"> </script> 
+	</head>
+	<body>
+		<div id="towrite"  class="fixedBox"></div>
+		<div id="towrite2" class="fixedBox" >
+		</div>
+         <!-- 分时图和K线图 -->
+            <div id="stock_charts">
+        <div id="fenshitu" style="height: 280px;"></div>
+        <div id="kxiantu" style="height: 370px;"></div>
+    </div>
+    <!-- /分时图和K线图 -->
+		<script>
+			var dt = "";
+			var tt = "";
+			var gt = "";
+			var k = 0;
+			window.onload = function() {
+				var day = new Date();
+				gt = day.getTime();
+				mymonth = day.getMonth()+1;
+				myday = day.getDate();
+				if(mymonth >= 10){mymonth = mymonth;}else{mymonth = "0" + mymonth;}
+				if(myday >= 10){myday = myday;}else{myday = "0" + myday;}
+				tt = day.getFullYear() + "-" + mymonth + "-" + myday;
+				dt = tt;
+				getSource();
+				changeStyle();			
+			}				
+
+			function time_range(beginTime, endTime) {
+				var strb = beginTime.split(":");
+				if (strb.length != 2) {
+					return false;
+				}
+
+				var stre = endTime.split(":");
+				if (stre.length != 2) {
+					return false;
+				}
+
+				var b = new Date();
+				var e = new Date();
+				var n = new Date();
+
+				b.setHours(strb[0]);
+				b.setMinutes(strb[1]);
+				e.setHours(stre[0]);
+				e.setMinutes(stre[1]);
+
+				if (n.getTime() - b.getTime() > 0 && n.getTime() - e.getTime() < 0) {
+					getSource();					
+					console.log(true)　　　　　　
+					return true;				
+				} else {
+					console.log(false)
+				    return false;     
+				}
+			}　　　
+   　　　
+			$(function() {
+				setInterval(function() {
+				time_range("9:00","15:15")						
+				},
+				60000);
+			})
+			
+			function changeStyle() {
+				var obj1 = document.getElementById("towrite");				
+				obj1.style.left= "0px"; 				
+				obj1.style.width= "98%";	
+				//obj1.style.height= "620px";		
+				obj1.style.fontSize="14px";	
+				
+			  var obj = document.getElementById("towrite2");      //市场情绪
+			  obj.style.top= "30px"; 
+			  obj.style.left= "700px";
+			  obj.style.width= "420px";
+			  obj.style.height= "260px";
+			}
+			
+			function closeStyle() {				
+				var obja = document.getElementById("fb");
+				if(obja.innerText=="▲")
+				{
+					obja.innerText="▼";	
+					var obj = document.getElementById("towrite2");					
+					obj.style.left= "600px";
+					obj.style.width= "320px";			  
+					obj.style.height= "30px";
+				}
+				else if(obja.innerText=="▼")	
+				{
+					obja.innerText="▲";	
+					changeStyle();
+				}			
+			}
+			
+			Date.prototype.Format = function (fmt) {
+				var o = {
+				"M+": this.getMonth() + 1, //月份
+				"d+": this.getDate(), //日
+				"h+": this.getHours(), //小时
+				"m+": this.getMinutes(), //分
+				"s+": this.getSeconds(), //秒
+				"q+": Math.floor((this.getMonth() + 3) / 3), //季度
+				"S": this.getMilliseconds() //毫秒
+				};
+				if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+				for (var k in o)
+				if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+				return fmt;
+			};
+			
+			function getLocalTime(nS) {			          
+				return new Date(parseInt(nS) * 1000).Format("hh:mm:ss")
+			}
+			
+			function cDayFunc(dp) { 
+				var date = dp.cal.getNewDateStr();            
+				BookingRmk(date);          
+			}
+			
+			function BookingRmk(date){         				
+				tt = date;
+				var date1 = new Date(tt);
+				var date2 = new Date(dt);							
+				k = 0;
+				if(date1.getTime() < date2.getTime()){			
+					k = 1;
+					tradeday();
+				}								
+				getSource();			
+			}
+			
+			function prev(){  //前一天
+				pn = -1;
+				var day = new Date(tt);	
+				day.setTime(day.getTime() - 24*60*60*1000);	
+				tt = day.Format("yyyy-MM-dd");
+				BookingRmk(tt);
+			}
+			
+			function next(){  //后一天 				
+				pn = 1;
+				var day = new Date(tt);	
+				day.setTime(day.getTime() + 24*60*60*1000);	
+				tt = day.Format("yyyy-MM-dd");
+				BookingRmk(tt);			
+			}
+			
+			var pn = -1;
+			function tradeday() {  //判断最后交易日
+				var day = new Date(tt);							
+				for (i = 1; i < 100; i++){	//节假日																										
+					if(i > 1){
+						day.setTime(day.getTime() + pn*24*60*60*1000);							
+					}	
+					tt = day.Format("yyyy-MM-dd");
+					//alert(tt);
+					if(tt == dt){	
+						k = 0;
+						//getSource();
+						break;
+					}
+					var url = "https://apphis.longhuvip.com/w1/api/index.php?Order=1&a=HisDaBanList&st=10&c=HisHomeDingPan&PidType=8&apiv=w26&Type=18&Is_st=1&Day=" + tt;
+
+					var res = [];
+					$.ajax({
+						type: "get",
+						url: url,
+						dataType: "json",
+						async : false,
+						cache:false,
+						timeout:3000,						
+						success: function(data) {
+							//alert(JSON.stringify(data))
+							res = data.list;							
+						}
+					});
+					if(res.length != 0){						
+						break;
+					}
+				}
+			}
+			
+			function scqx(){  //市场情绪			
+				var div = document.getElementById("towrite2");
+				if(div.style.display == "none"){
+					div.style.display = "block";
+				}else{
+					div.style.display = "none";
+				}
+			}
+			
+			function getSource() {	
+				var div = document.getElementById("towrite");
+				div.innerHTML = '<font color="#fff"; size="3">直播</font><input style="margin-left:10px;width:100px;" type="text" id="PriceDate" name="PriceDate" class="Wdate" onFocus="WdatePicker({ onpicking: cDayFunc})" />';		
+				var back = '<a href="javascript:prev();"  style="padding-left:10px;font-size:16px;color:#fff;">←</a>';				
+				var forward = '<a href="javascript:next();"  style="font-size:16px;color:#fff;">→</a>';
+				var sc = '<a href="javascript:scqx();"  style="padding-left:20px;font-size:12px;color:#00FFFF;">市场情绪（开关）</a>';
+				div.innerHTML += back + forward + sc;
+				
+				var url01 = "https://apphq.longhuvip.com/w1/api/index.php?a=ZhiBoContent&apiv=w21&c=ConceptionPoint";
+				var url02 = "https://apphis.longhuvip.com/w1/api/index.php?a=ZhiBoContent&st=0&apiv=w31&c=HisConceptionPoint&Date=" + tt;
+				
+				//var url1 = "https://apphq.longhuvip.com/w1/api/index.php?a=DiskReview&apiv=w21&c=HomeDingPan"; 				
+				//var url2 = "https://apphq.longhuvip.com/w1/api/index.php?a=ZhangFuDetail&apiv=w21&c=HomeDingPan"; 				
+				//var url3 = "https://apphq.longhuvip.com/w1/api/index.php?a=ZhangTingExpression&apiv=w21&c=HomeDingPan"; 	
+
+				//盘面点评
+				var url11 = "https://apphq.longhuvip.com/w1/api/index.php?a=DiskReview&apiv=w30&c=HomeDingPan"; 
+				var url12 = "https://apphis.longhuvip.com/w1/api/index.php?a=DiskReview&apiv=w30&c=HisHomeDingPan&Day=" + tt;
+				
+				//涨跌统计				
+				var url21 = "https://apphq.longhuvip.com/w1/api/index.php?a=ZhangFuDetail&apiv=w21&c=HomeDingPan"; 
+				var url22 = "https://apphis.longhuvip.com/w1/api/index.php?a=HisZhangFuDetail&c=HisHomeDingPan&apiv=w27&Day=" + tt; 
+				
+				//涨停表现
+				var url31 = "https://apphq.longhuvip.com/w1/api/index.php?a=ZhangTingExpression&apiv=w30&c=HomeDingPan"; 
+				var url32 = "https://apphis.longhuvip.com/w1/api/index.php?a=ZhangTingExpression&apiv=w30&c=HisHomeDingPan&Day=" + tt;
+				
+				
+				var url = url01;
+				var url1 = url11;
+				var url2 = url21;
+				var url3 = url31;
+				if(k == 1){
+					url = url02;
+					url1 = url12;
+					url2 = url22;
+					url3 = url32;
+				}
+				
+				var res = [];
+				$.ajax({
+					type: "get",
+					url: url,
+					dataType: "json",
+					async : false,
+					cache:false,
+					timeout:3000,						
+					success: function(data) {
+						//alert(JSON.stringify(data))
+						//document.write(JSON.stringify(data));
+						if(k == 0){
+							tt = data.date;
+							dt = tt;
+						}
+						//alert(dt)
+						
+						for (i = 0; i < data.List.length; i++){	
+							var res1 = [];
+							var aa = data.List[i].Stock;
+							for (j = 0; j < aa.length; j++){
+								res1.push({"code":aa[j][0],"name":aa[j][1],"zf":aa[j][2]});
+							}							
+							res.push({"Time":getLocalTime(data.List[i]["Time"]),"Comment":data.List[i]["Comment"],"Stock":res1});														
+						}
+					}
+				});
+				
+				data = '{"List":' + JSON.stringify(res) + '}';
+				//document.write(data);
+				
+				var transform_aa = [           
+				{"tag":"ul", children:function(){return(json2html.transform(this.List, transform_bb));}}
+				];
+				
+				var transform_bb= 				
+				{"tag":"p", children:[				
+				{"tag": "h4 style=color:#FFA500;","html":"【${Time}】 ${Comment}"},														
+				{"tag":"p", children:function(){return(json2html.transform(this.Stock, transform_cc));}},    							
+				]};
+				// 修改股票代码链接的生成部分
+				var transform_cc= 
+				{"tag":"p", children:[
+				{"tag":"p", children:function(){
+					if(this.code != null){
+						// 添加鼠标悬停事件
+                            return ('<a style="margin-left:20px;" href="javascript:void(0);" onclick="showStockCharts(\'' + this.code + '\')" onmouseover="showStockCharts(\'' + this.code + '\')" onmouseout="$(\'#stock_charts\').hide()">' + this.code + '&nbsp;&nbsp;' + this.name + '&nbsp;&nbsp;' + '涨幅：' + this.zf + '% </a>');
+					}
+				}},	
+				]};  
+				
+				var html = json2html.transform(data, transform_aa);		
+				div = document.getElementById('towrite');
+				div.innerHTML += html;
+				document.getElementById("PriceDate").value = tt;			
+			
+				var res1 = [];
+				$.ajax({
+					type: "get",
+					url: url1,
+					dataType: "json",
+					async : false,
+					cache:false,
+					timeout:3000,						
+					success: function(data) {
+						//alert(JSON.stringify(data))
+						//document.write(JSON.stringify(data));
+						res1 = data;						
+					}
+				});
+									
+				var data1 = JSON.stringify(res1);
+				var transform_aa1 = [           
+				{"tag":"ul", children:function(){return(json2html.transform(this.info, transform_bb1));}}
+				];
+				
+				var transform_bb1= 				
+				{"tag":"p", children:[
+				{"tag": "p","html":"综合强度：${strong}"},				
+				{"tag": "p","html":"盘面点评：${sign}"},																		 						
+				]};
+				
+				
+				var res2 = [];
+				$.ajax({
+					type: "get",
+					url: url2,
+					dataType: "json",
+					async : false,
+					cache:false,
+					timeout:3000,						
+					success: function(data) {
+						//alert(JSON.stringify(data))
+						//document.write(JSON.stringify(data));
+						res2 = data;						
+					}
+				});
+				var data2 = JSON.stringify(res2);				
+				var transform_aa2 = [           
+				{"tag":"ul", children:function(){return(json2html.transform(this.info, transform_bb2));}}
+				];
+				
+				var transform_bb2= 				
+				{"tag":"p", children:[
+				{"tag": "p","html":"涨跌统计：${sign}"},
+				{"tag": "p","html":"实际涨停：${SJZT} &nbsp;&nbsp;实际跌停：${SJDT}"},								
+				{"tag": "p","html":"上涨家数：${SZJS} &nbsp;&nbsp;下跌家数：${XDJS}"},												
+				]};
+				
+				
+				var res3 = [];
+				$.ajax({
+					type: "get",
+					url: url3,
+					dataType: "json",
+					async : false,
+					cache:false,
+					timeout:3000,						
+					success: function(data) {
+						//alert(JSON.stringify(data))
+						//document.write(JSON.stringify(data));
+
+						res3.push({"1b":data.info[0],"2b":data.info[1],"3b":data.info[2],"gg":data.info[3],"bx":data.info[11]});	
+					}
+				});
+				
+				var data3 = '{"info":' + JSON.stringify(res3) + "}";				
+				//document.write(data3);
+				var transform_aa3 = [           
+				{"tag":"ul", children:function(){return(json2html.transform(this.info, transform_bb3));}}
+				];
+				
+				var transform_bb3 = {
+                "tag": "p", "class": "towrite2", "children": [
+                    {"tag": "span", "html": "涨停股表现："},
+                    {"tag": "span", "class": "number", "html": "${bx}"}, // 数字部分
+                    {"tag": "br"},
+                    {"tag": "span", "html": "一板："},
+                    {"tag": "span", "class": "number", "html": "${1b}"}, // 数字部分
+                    {"tag": "span", "html": "&nbsp;&nbsp;二板："},
+                    {"tag": "span", "class": "number", "html": "${2b}"}, // 数字部分
+                    {"tag": "span", "html": "&nbsp;&nbsp;三板："},
+                    {"tag": "span", "class": "number", "html": "${3b}"}, // 数字部分
+                    {"tag": "span", "html": "&nbsp;&nbsp;高度板："},
+                    {"tag": "span", "class": "number", "html": "${gg}"} // 数字部分
+                ]
+            };
+				
+				var html1 = json2html.transform(data1, transform_aa1);
+				var html2 = json2html.transform(data2, transform_aa2);
+				var html3 = json2html.transform(data3, transform_aa3);
+									
+				div2 = document.getElementById('towrite2');					
+				var myDate = new Date();					
+				div2.innerHTML = "<font size='5'>市场情绪：&nbsp;&nbsp;&nbsp;" + myDate.Format("hh:mm:ss") + "<font size='2' style='margin-left:5px;'>" + tt + '</font></font>' + html1 + html2 + html3;					
+										
+			}
+			/// 修改鼠标悬停显示分时图和日线图
+        function showStockCharts(stock_id) {
+            var max = 9999;
+            var min = 0;
+            var res = parseInt(Math.random() * (max - min + 1) + min);
+            var prefix = stock_id > 600000 ? "1" : "0";
+
+            // 动态生成分时图和日线图的图片地址
+            var fenShiUrl = "http://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=" + prefix + "." + stock_id + "&timespan=" + res;
+            var kXianUrl = "http://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=" + prefix + "." + stock_id + "&type=&unitWidth=-6&ef=&formula=MACD&AT=1&imageType=KXL&timespan=" + res;
+
+            // 显示分时图和日线图
+            $("#fenshitu").html("<img style='width: 510px;' src='" + fenShiUrl + "'>");
+            $("#kxiantu").html("<img style='width: 510px;' src='" + kXianUrl + "'>");
+
+            // 显示图表容器
+            $("#stock_charts").show();
+        }
+		<!-- /分时图和K线图 -->
+		</script>	
+	</body>
+</html>

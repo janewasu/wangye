@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<title>股通快讯</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="理想★浪漫男★制作，玩得开心">
+
+<style>
+   body {
+   font-family: Arial, sans-serif;
+   margin: 10px;
+   background-color: #1D232D;
+     }
+
+    body {
+    overflow-y: scroll; 
+    scrollbar-width: none; 
+    -ms-overflow-style: none;
+    }
+    body::-webkit-scrollbar {
+    display: none;
+    }
+
+/* 时间样式 */
+.custom-time {
+    font-size: 13px; /* 字体大小 */
+    color: #16D8E0; /* 青色 */
+    margin-right: 10px; /* 右侧间距 */
+    font-weight: bold; /* 加粗 */
+    text-transform: uppercase; /* 转换为大写（可选） */
+}
+
+/* 自定义标题样式 */
+.custom-title {
+    font-size: 15px; /* 字体大小 */
+    color: #EEB422; /* 橙色 */
+    margin-bottom: 1px; /* 底部间距 */
+}
+
+/* 自定义内容样式 */
+.custom-content {
+    font-size: 14px; /* 字体大小 */
+    color: #F2F2F2; /* 浅灰色 */
+}
+
+dl, dd {
+    margin: 0;
+    padding: 0;
+}
+
+.custom-title {
+    margin-bottom: 5px; /* 调整标题和内容之间的间距 */
+}
+
+dl, dd, h6, div {
+    margin: 0;
+    padding: 1px;
+}
+
+.stocks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.stocks a {
+    font-family: Arial, sans-serif; /* 设置字体 */
+    font-size: 14px; /* 设置字体大小 */
+    color: #F2F2F2; /* 设置字体颜色 */
+    background-color: #1D232D; /* 设置背景颜色 */
+    text-decoration: none; /* 移除下划线 */
+    border: 1px solid #16D8E0; /* 设置边框颜色 */
+    border-radius: 4px; /* 设置圆角 */
+    padding: 5px 10px; /* 设置内边距 */
+    margin-right: 5px; /* 设置右边距 */
+}
+
+.stocks a:hover {
+    color: #EE5C42; /* 鼠标悬停时的字体颜色 */
+    background-color: #2A3441; /* 鼠标悬停时的背景颜色 */
+    border-color: #EEB422; /* 鼠标悬停时的边框颜色 */
+}
+
+</style>
+
+</head>
+
+<script>
+// 动态加载新闻数据
+function fetchNews() {
+    const urlKX = 'https://baoer-api.xuangubao.cn/api/v6/message/newsflash?subj_ids=9,10,723,35,469,821&platform=pcweb';
+    fetch(urlKX)
+        .then(response => response.json())
+        .then(data => {
+            const newsContainer = document.getElementById('news');
+            newsContainer.innerHTML = ''; // 清空现有内容
+            data.data.messages.forEach((sk, index) => {
+                const newsItem = document.createElement('dl');
+                newsItem.className = 'none notvip' + sk.super_vip_right_type;
+                const newsContent = document.createElement('dd');
+                if (sk.subj_ids.includes(10)) {
+                    newsContent.className = 'text-danger hot'; 
+                }
+                const newsTitle = document.createElement('h6');
+                newsTitle.className = 'fz_15 custom-title'; 
+                const newsDate = document.createElement('strong');
+                newsDate.className = 'text-orange custom-time'; // 时间样式
+   
+                let date;
+                if (typeof sk.created_at === 'number') {
+                    date = new Date(sk.created_at * 1000); 
+                } else if (typeof sk.created_at === 'string') {
+                    date = new Date(sk.created_at);
+                } else {
+                    date = new Date();
+                }
+
+                newsDate.textContent = date.toLocaleString(); 
+                const newsTitleText = document.createElement('span');
+                newsTitleText.className = 'fz-14';
+                newsTitleText.textContent = sk.title;
+                newsTitle.appendChild(newsDate);
+                newsTitle.appendChild(newsTitleText);
+                const newsSummary = document.createElement('div');
+                newsSummary.className = 'fz_12 custom-content'; 
+                newsSummary.textContent = sk.summary;
+                const stocksContainer = document.createElement('div');
+                stocksContainer.className = 'stocks';
+                sk.stocks.forEach(stock => {
+                    const stockLink = document.createElement('a');
+                    stockLink.href = `http://www.treeid/code_${stock.symbol.replace(".SS", "").replace(".SH", "").replace(".SZ", "")}`;
+                    stockLink.className = 'border d-inline-block px_5 pb-1 mr-1';
+                    stockLink.textContent = stock.name;
+                    stocksContainer.appendChild(stockLink);
+                });
+                newsContent.appendChild(newsTitle);
+                newsContent.appendChild(newsSummary);
+                newsContent.appendChild(stocksContainer);
+                newsItem.appendChild(newsContent);
+                newsContainer.appendChild(newsItem);
+            });
+        })
+        .catch(error => console.error('Error fetching news:', error));
+}
+
+
+function shownews(filterType) {
+    const newsItems = document.querySelectorAll('#news dl');
+
+    newsItems.forEach(item => {
+        if (filterType === 1) {
+
+            if (item.querySelector('.text-danger')) {
+                item.style.display = 'block'; // 显示
+            } else {
+                item.style.display = 'none'; // 隐藏
+            }
+        } else {
+            // 如果选择“全部”，显示所有新闻
+            item.style.display = 'block';
+        }
+    });
+}
+
+// 页面加载时获取新闻数据
+document.addEventListener('DOMContentLoaded', function() {
+    fetchNews();
+    setInterval(fetchNews, 15000);
+});
+
+</script>
+
+<script>infoHTML();footHTML();infoBtn();</script>
+
+<div class="d-none">
+
+</div>
+<body>
+<div id="wrap">
+<div class="container-fluid min_h400" id="box">
+<div class="border-top pb-1 px_5">
+<a href="javascript:shownews(0)" style="color: #DAA520; font-size: 14px;">全部</a>
+<a href="javascript:shownews(1)" style="color: #CD2626; margin-left: 5px; font-size: 14px;">警示</a>
+<a href="javascript:location.reload();" style="color: #76EE00; margin-left: 5px; font-size: 14px;">刷新</a>
+<a target="_blank" href="https://xuangubao.cn/live" style="font-size: 12px; margin-left: 20px;color: #16D8E0;">选股通</a>
+</div>
+
+<div id="news"></div>
+
+</div>
+</div>
+</body>
+</html>

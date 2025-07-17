@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>同花顺重要信息</title>
+  <style>
+    #leagues {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      /* 修改屏幕显示宽度 */
+      width: 99%;
+      margin: auto;
+      
+    }
+
+    #leagues td {  
+  color: white;  
+  background-color: black;
+  padding: 1px; 
+  border: 1px solid #ddd; 
+}
+    
+    #leagues th {
+      border: 1px solid #ddd;
+      padding: 1px;
+      /* 修改表格字体 */
+      font-size: 13px;
+
+    }
+
+
+#leagues tr a {  
+  color: white;  
+  background-color: black;  
+}  
+  
+#leagues tr a:hover {  
+  color: red;  
+  background-color: #333;  
+}
+    #leagues th {
+      padding-top: 5px;
+      padding-bottom: 5px;
+      text-align: center;
+      background-color: #bd0707;
+      color: white;
+      /* 修改表头字体大小 */
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+    <table id="leagues">
+    <thead>
+      <tr>
+        <th>标题</th>
+        <th>同花顺重要信息</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+
+  <script>
+    // 请替换为您的API密钥
+    const apiUrl = 'https://news.10jqka.com.cn/app/flash/flashnews/v1/list?seq=0&tagId=-21101'; 
+
+    fetch(apiUrl)
+      .then(response => response.json())
+      .then(data => {
+        const leagues = data.data.list;
+        const tableBody = document.querySelector('#leagues tbody');
+
+        leagues.forEach(league => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+         <td width="25%"><a href="${league.url}" style="text-decoration: none; color: orange;" target="_blank" >${league.title}</a></td>
+         <td><a href="${league.url}" style="text-decoration: none; " target="_blank">${league.summary}</a></td>
+                    `;
+          tableBody.appendChild(row);
+        });
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+      });
+  </script>
+</body>
+
+</html>

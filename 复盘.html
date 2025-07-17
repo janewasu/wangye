@@ -1,0 +1,499 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+	<title>复盘</title>
+	<link href="css/text.css" rel="stylesheet" type="text/css" />
+	<meta charset="utf-8" />
+	<style>
+		.fixedBox{
+			border: 1px solid #555555;				
+			white-space: nowrap;	
+		}
+		.fixedBox::-webkit-scrollbar {
+			width: 12px;     
+			height: 12px;				
+		}
+		#tag{			
+			border: 1px solid #FF5A0B;
+			padding: 3px;
+			display: inline-block;
+			color: #FFFF80;
+		}
+		#tag1{			
+			border: 2px solid #FF0000;
+			padding: 3px;
+			display: inline-block;
+			color: #FFFF00;
+		}
+		#tag2{			
+			border: 2px solid #00FF00;
+			padding: 3px;
+			display: inline-block;
+			color: #FFFF00;
+		}
+	</style>
+	<script type="text/javascript" src="js/jquery.min.js"></script>
+	<script type="text/javascript" src="DatePicker/WdatePicker.js"> </script>
+	</head>
+	<body>
+		<div id="title"></div>
+		<div id="content" class="fixedBox"></div>	
+		<script>
+			var bkcolor = $("body").css("backgroundColor");
+			var dt = "";
+			var tt = "";			
+			var k = 0;		
+			window.onload = function() {
+				var day = new Date();				
+				mymonth = day.getMonth()+1;
+				myday = day.getDate();
+				if(mymonth >= 10){mymonth = mymonth;}else{mymonth = "0" + mymonth;}
+				if(myday >= 10){myday = myday;}else{myday = "0" + myday;}
+				tt = day.getFullYear() + "-" + mymonth + "-" + myday;
+				//dt = tt;			
+				changeStyle();
+				start();
+			}
+			
+			function changeStyle() {
+				<!-- var obj = document.getElementById("towrite");								 -->
+				<!-- obj.style.left= "0px"; 				 -->
+				<!-- obj.style.width= "100%";	 -->
+				<!-- //obj.style.height= "620px";		 -->
+				<!-- obj.style.fontSize="14px";		 -->
+				var div = document.getElementById("title");				
+				div.style.left= "0px"; 				
+				div.style.width= "98%";	
+				div.style.height= "20px";	
+				
+				var div = document.getElementById("content");				
+				div.style.top= "35px"; 
+				div.style.left= "10px"; 				
+				div.style.width= "96%";	
+				div.style.height= "90%";
+				div.style.fontSize= "14px";		
+			}
+			
+			Date.prototype.Format = function (fmt) {
+				var o = {
+				"M+": this.getMonth() + 1, //月份
+				"d+": this.getDate(), //日
+				"h+": this.getHours(), //小时
+				"m+": this.getMinutes(), //分
+				"s+": this.getSeconds(), //秒
+				"q+": Math.floor((this.getMonth() + 3) / 3), //季度
+				"S": this.getMilliseconds() //毫秒
+				};
+				if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+				for (var k in o)
+				if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+				return fmt;
+			};
+			
+			function getLocalTime(nS) {			          
+				return new Date(parseInt(nS*1000)).Format("hh:mm:ss")
+			}
+
+			function keepTwoDecimal(num) {  
+               var result = parseFloat(num);  
+               if (isNaN(result)) {  
+                   //alert('传递参数错误，请检查！');  
+                   return false;  
+               }  
+               result = Math.round(num * 100) / 100;  
+               return result;  
+			};		
+			
+			function cDayFunc(dp){ 
+				var date = dp.cal.getNewDateStr();
+				BookingRmk(date);//调用其它函数并带上参数  
+			}
+			
+			function BookingRmk(date){         
+				tt = date;
+				var date1 = new Date(tt);
+				var date2 = new Date(dt);
+				k = 0;
+				if(date1.getTime() < date2.getTime()){			
+					k = 1;
+					tradeday();
+				}else{
+					tt = dt
+				}
+				//getSource(fs)
+				setTimeout(function(){getSource(fs)}, 100);  //延时执行;						
+			}
+			
+			function prev(){  //前一天
+				pn = -1;
+				var day = new Date(tt);	
+				day.setTime(day.getTime() - 24*60*60*1000);	
+				tt = day.Format("yyyy-MM-dd");
+				BookingRmk(tt);
+			}
+			
+			function next(){  //后一天 				
+				pn = 1;
+				var day = new Date(tt);	
+				day.setTime(day.getTime() + 24*60*60*1000);	
+				tt = day.Format("yyyy-MM-dd");
+				BookingRmk(tt);			
+			}
+			
+			var pn = -1;
+			function tradeday() {  //判断最后交易日
+				var day = new Date(tt);							
+				for (i = 1; i < 100; i++){	//节假日																										
+					if(i > 1){
+						day.setTime(day.getTime() + pn*24*60*60*1000);							
+					}	
+					tt = day.Format("yyyy-MM-dd");
+					//alert(tt);
+					if(tt == dt){	
+						k = 0;
+						getSource(fs);
+						break;
+					}
+					var url = "https://apphis.longhuvip.com/w1/api/index.php?a=GetPMSL_PMLD&st=60&apiv=w31&c=FuPanLa&Index=0&Date=" + tt;
+					var res = [];
+					$.ajax({
+						type: "get",
+						url: url,
+						dataType: "json",
+						async : false,
+						cache:false,
+						timeout:3000,						
+						success: function(data) {							
+							//alert(JSON.stringify(data))		
+							res = data.List;							
+						}
+					});
+					if(res.length != 0){						
+						break;
+					}
+				}
+			}				
+			
+			function start() {
+				var div = document.getElementById('title');
+				var p1 = "<a href='javascript:void(0)' id='px1' onclick='getSource(1)'>" + "盘面亮点" + "</a>";				
+				var p2 = "<a href='javascript:void(0)' id='px2' onclick='getSource(2)'>" + "亏钱效应" + "</a>";	
+				var p3 = "<a href='javascript:void(0)' id='px3' onclick='getSource(3)'>" + "板块核心" + "</a>";
+				var p4 = "<a href='javascript:void(0)' id='px4' onclick='getSource(4)'>" + "市场梯队" + "</a>";	
+				var p5 = "<a href='javascript:void(0)' id='px5' onclick='getSource(5)'>" + "涨停原因" + "</a>";				
+				div.innerHTML = '<font size="4">复盘</font><font size="2">（ ' + p1 + p2 + p3 + p4 + p5 + '）</font><input style="width:90px;" type="text" id="PriceDate" name="PriceDate" class="Wdate" onFocus="WdatePicker({ onpicking: cDayFunc})" />';						
+				var back = '<a href="javascript:prev();"  style="padding-left:10px;;font-size:16px;color:#fff;">←</a>';					
+				var forward = '<a href="javascript:next();"  style="padding-left:10px;font-size:16px;color:#fff;">→</a>';
+				div.innerHTML += back + forward + '<br>';
+				
+				getSource(fs);
+			}
+			
+			var fs = 1;			
+			function getSource(p) {
+				fs = p;				
+				var alist = document.getElementById("title").getElementsByTagName("a");					
+				for(var i = 0; i < alist.length; i++){				
+					alist[i].style.color = "#F9F9F9"; //给所有a标签赋原色
+				}
+				var aObj = document.getElementById('px' + p);				
+				aObj.style.color = "#FFA07A";		
+				
+				var div = document.getElementById('content');
+				div.innerHTML = "";				
+				if(p == 1){
+					var url1 = "https://apphq.longhuvip.com/w1/api/index.php?a=GetPMSL_PMLD&st=60&apiv=w31&c=FuPanLa&Index=0";
+					var url2 = "https://apphis.longhuvip.com/w1/api/index.php?a=GetPMSL_PMLD&st=60&apiv=w31&c=FuPanLa&Index=0&Date=" + tt;
+					
+					var url = url1;
+					if(k == 1){
+						url = url2;
+					}
+					
+					var res = [];
+					$.ajax({
+						type: "get",
+						url: url,
+						dataType: "json",
+						async : false,
+						cache:false,
+						timeout:3000,					
+						success: function(data) {
+							//alert(JSON.stringify(data))						
+							//document.write(JSON.stringify(data));							
+							res = data.List;
+							if(k == 0){	
+								tt = data.date;								
+								dt = tt;
+							}							
+						}
+					});
+					//document.write(JSON.stringify(res));
+										
+					if(res.length > 0){
+						for (var i = 0; i < res.length; i++){
+							var TagName = res[i].TagName;
+							var ZSCode = res[i].ZSCode;						
+							var ZSName = res[i].ZSName;
+							var Detail = res[i].Detail;
+							
+							var g = "";
+							var aa = res[i].StockList;
+							//alert(JSON.stringify(aa))
+							for (var j = 0; j < aa.length; j++){
+								var code = aa[j][0];
+								var name = aa[j][1];
+								g += "<a style='color:#F9F9F9;' href='http://www.treeid/code_" + code + "' onclick='changeCss(this);'>" + name + "</a>";
+							}
+							var tagc = "<span id='tag1'>" + TagName +"</span>";
+							if(TagName.indexOf("面") > -1 || TagName == "核按钮" || TagName.indexOf("跌") > -1 || TagName.indexOf("天地板") > -1){
+								tagc = "<span id='tag2'>" + TagName +"</span>";
+							}
+							div.innerHTML += "<p>" + tagc + "<span id='tag' style='margin-left:10px;'>" + ZSName + "</span><span style='margin-left:10px;'>" + g + "<span></p>";
+							div.innerHTML += "<p style='margin-top:-12px;color:#FFFFE0;white-space:normal;font-size:16px;'>" + Detail + "</p>";
+						}
+					}				
+				}else if(p == 2){
+					var url1 = "https://apphq.longhuvip.com/w1/api/index.php?a=GetPMSL_KQXY&apiv=w31&c=FuPanLa";
+					var url2 = "https://apphis.longhuvip.com/w1/api/index.php?a=GetPMSL_KQXY&apiv=w31&c=FuPanLa&Date=" + tt;
+					
+					var url = url1;
+					if(k == 1){
+						url = url2;
+					}
+					
+					var res = [];
+					$.ajax({
+						type: "get",
+						url: url,
+						dataType: "json",
+						async : false,
+						cache:false,
+						timeout:3000,					
+						success: function(data) {
+							//alert(JSON.stringify(data))						
+							//document.write(JSON.stringify(data));							
+							res = data.List;												
+						}
+					});
+					//document.write(JSON.stringify(res));
+										
+					if(res.length > 0){
+						for (var i = 0; i < res.length; i++){
+							var code = res[i][0];
+							var name = res[i][1];
+							var zf = res[i][2];
+							var hc = res[i][3];
+							var bk = res[i][6];							
+							div.innerHTML += "<p><a style='color:#F9F9F9;' href='http://www.treeid/code_" + code 
+							+ "' onclick='changeCss(this);'>" + name + "&nbsp;&nbsp;涨幅：" + zf + "&nbsp;&nbsp;最大回撤：" 
+							+ hc + "%&nbsp;&nbsp;&nbsp;&nbsp;<span style='color:#FF8040;'>" + bk + "</span></a></p>";
+						}
+					}				
+				}else if(p == 3){
+					var url1 = "https://apphq.longhuvip.com/w1/api/index.php?a=GetYTFP_BKHX&apiv=w27&c=FuPanLa"; 								
+					var url2 = "https://apphis.longhuvip.com/w1/api/index.php?a=GetYTFP_BKHX&apiv=w27&c=FuPanLa&Date=" + tt;				
+					var url = url1;
+					if(k == 1){
+					  url = url2;
+					}
+					var res = [];
+					$.ajax({
+						type: "get",
+						url: url,
+						dataType: "json",
+						async : false,
+						cache:false,
+						timeout:3000,					
+						success: function(data) {
+							//alert(JSON.stringify(data))						
+							//document.write(JSON.stringify(data));														
+							res = data;
+							
+							//连板数量排序
+							function up(a,b){
+								return b.TDType - a.TDType											
+							}
+							for(var i = 0; i < res.List.length; i++){
+								var td = res.List[i].TD;								
+								td.sort(up);					
+							}	
+						}
+					});	
+					//document.write(JSON.stringify(res.List));
+					for (var i = 0; i < res.List.length; i++){
+						var aa = res.List[i];
+						var Count = aa.Count;
+						var ZSName = aa.ZSName;
+						div.innerHTML += "<p style='color:#FFCDB5;;font-size:16px;'>" + ZSName + "（" + Count +"家涨停）";
+						for (var i1 = 0; i1 < aa.TD.length; i1++){
+							var bb = aa.TD[i1];
+							var TDType = bb.TDType;
+							if(TDType != 0){
+								TDType = TDType + "板";
+							}else{
+								TDType = "反包";
+							}
+							var g = "";
+							for (var i2 = 0; i2 < bb.Stock.length; i2++){
+								var cc = bb.Stock[i2];
+								var code = cc.StockID;
+								var name = cc.StockName;
+								var Tips = cc.Tips;
+								if(Tips == ""){
+									Tips = "";	
+								}else{
+									Tips = "<font style='color:#FF5B5B'>（" + Tips + "）</font>";
+								}
+								g += "<a style='margin-left:10px;color:#F9F9F9;' href='http://www.treeid/code_" + code + "' onclick='changeCss(this);'>" + name + Tips + "</a>";;
+							}
+							div.innerHTML += "<p style='margin-top:-10px;'><span style='margin-top:-10px;color:#FFFFAC;'>" + TDType + "</span>" + g + "<br>";							
+						}
+					}
+				}else if(p == 4){
+					var url1 = "https://apphq.longhuvip.com/w1/api/index.php?a=GetYTFP_SCTD&apiv=w31&c=FuPanLa"; 								
+					var url2 = "https://apphis.longhuvip.com/w1/api/index.php?a=GetYTFP_SCTD&apiv=w31&c=FuPanLa&Date=" + tt;				
+					var url = url1;
+					if(k == 1){
+					  url = url2;
+					}
+					var res = [];
+					$.ajax({
+						type: "get",
+						url: url,
+						dataType: "json",
+						async : false,
+						cache:false,
+						timeout:3000,					
+						success: function(data) {
+							//alert(JSON.stringify(data))						
+							//document.write(JSON.stringify(data));														
+							res = data;
+							
+							//连板数量排序
+							function up(a,b){
+								return b.Tip - a.Tip											
+							}
+							res.List.sort(up);							
+						}
+					});	
+					//document.write(JSON.stringify(res));
+					for (var i = 0; i < res.List.length; i++){
+						var aa = res.List[i];
+						var Tip = aa.Tip;
+						if(Tip != 0){
+							Tip = Tip + "板";
+						}else{
+							Tip = "反包";
+						}
+						var g = "";
+						for (var j = 0; j < aa.Stocks.length; j++){							
+							var bb = aa.Stocks[j];
+							var code = bb.StockID;
+							var name = bb.Name;
+							var Tips = bb.Tips;
+							if(Tips == ""){
+								Tips = "";	
+							}else{
+								Tips = "<font style='color:#FF5B5B'>（" + Tips + "）</font>";
+							}
+							g += "<a style='margin-left:10px;color:#F9F9F9;' href='http://www.treeid/code_" + code + "' onclick='changeCss(this);'>" + name + Tips + "</a>";;
+						}
+						div.innerHTML += "<p style='margin-top:10px;'><span style='margin-top:-10px;color:#FFFFAC;'>" + Tip + "</span>" + g + "<br>";							
+					}
+				}else if(p == 5){
+					var url1 = "https://apphq.longhuvip.com/w1/api/index.php?a=GetPlateInfo&st=1000&apiv=w31&c=DailyLimitResumption&Index=0"; 								
+					var url2 = "https://apphis.longhuvip.com/w1/api/index.php?st=1000&a=GetPlateInfo&apiv=w31&Index=0&c=HisLimitResumption&Date=" + tt;				
+					var url = url1;
+					if(k == 1){
+					  url = url2;
+					}
+					var res = [];
+					$.ajax({
+						type: "get",
+						url: url,
+						dataType: "json",
+						async : false,
+						cache:false,
+						timeout:3000,					
+						success: function(data) {
+							//alert(JSON.stringify(data))						
+							//document.write(JSON.stringify(data));														
+							div.innerHTML = "<p style='color:#D7FFFF;'><span>涨跌对比：" + data.nums.SZJS + "：" + data.nums.XDJS + "</span><span style='padding-left:20px;'>昨日涨停表现：" + keepTwoDecimal(data.nums.yestRase) + "%</span></p>";							
+							div.innerHTML += "<p style='margin:-10px 0px -5px 0px;color:#D7FFFF;'><span>涨跌停对比：" + data.nums.ZT + "：" + data.nums.DT + "</span><span style='padding-left:50px;'>破板率：" + keepTwoDecimal(data.nums.ZBL) + "%</span></p>";
+							res = data.list;							
+						}
+					});	
+					//document.write(JSON.stringify(res));
+					for (var i = 0; i < res.length; i++){
+						var aa = res[i];
+						var ZSName = aa.ZSName;	
+						var num = aa.num;
+						div.innerHTML += "<p style='margin-bottom:-5px;color:#FFFF77;font-size:16px;'>" + ZSName + "（" + num +"家涨停）";
+						var g = "";
+						for (var j = 0; j < aa.StockList.length; j++){							
+							var bb = aa.StockList[j];
+							var code = bb[0];
+							var name = bb[1];
+							var zf = bb[4];
+							var zttime = getLocalTime(bb[6]);
+							var lb = bb[9];
+							var bk = bb[11];
+							var xq = bb[17].replace(/\r\n/,"<br>");
+							if(xq.indexOf("；") > -1){
+								var x = xq.split("；");
+								xq = x[0] + "：<br>" + x[1];
+							}
+							g = "<a style='margin-left:10px;color:#F9F9F9;' href='http://www.treeid/code_" + code 
+							+ "' onclick='changeCss(this);'>" + name + "&nbsp;&nbsp;涨幅：" + zf 
+							+ "%&nbsp;&nbsp;涨停时间：" + zttime + "&nbsp;&nbsp;<span style='color:#FF80FF;'>" + lb 
+							+ "</span>&nbsp;&nbsp;<span style='color:#FF8040;'>" + bk + "</span></a>";
+							var jx = "<td><a href='javascript:void(0)' id='xq' onclick='update(" + "\"" + code + "\"" + ");' style='position:absolute;left:550px;color:#FFA07A'>" + "详情" + "</a></td>";														
+							div.innerHTML += "<p style='margin:8px 0px 5px -5px;'>" + g + jx + "</p>";
+							
+							//添加分类Div
+							var newDiv = document.createElement("div");
+							newDiv.id = code;							
+							newDiv.style.display = "none";
+							newDiv.style.width = "95%";
+							newDiv.style.marginLeft = "-5px";
+							newDiv.style.border = "1px solid #646464";
+							newDiv.style.color = "#FFFACD";
+							newDiv.style.whiteSpace = "normal";
+							//newDiv.style.fontSize= "14px";	
+							//temp += code + ";";							
+							div.appendChild(newDiv);
+							newDiv.innerHTML += xq;
+						}
+						//div.innerHTML += "<p style='margin-top:10px;'>" + g + "</p>";							
+					}
+				}
+				document.getElementById("PriceDate").value = tt;
+				div.scrollTop = 0; //回到顶部	
+			}
+			
+			function changeCss(obj){				
+				var alist = document.getElementById("content").getElementsByTagName("a");					
+				for(var i = 0; i < alist.length; i++){				
+					if(alist[i].id != "xq" && alist[i].id.indexOf("px") == -1){
+						alist[i].style.color = "#F9F9F9"; //给所有a标签赋原色
+					}
+				}
+				obj.style.color = "#00FFFF"; //令当前标签高亮				
+			}
+			
+			var temp = "";	
+			function update(ss) {	
+				div = document.getElementById(ss);
+				if(temp.indexOf(ss) == -1){
+					temp += ss + ";";
+					div.style.display = "block";
+				}else{
+					temp = temp.replace(ss + ";" , "");
+					div.style.display = "none";
+				}
+			}
+			
+		</script>		
+	</body>
+</html>

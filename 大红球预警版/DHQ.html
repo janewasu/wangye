@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <meta http-equiv="pragma" content="no-cache" />
+    <meta name=renderer content=webkit>
+    <title>DHQ</title>
+
+    <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        
+        body, html {
+          width: 100%;
+          overflow-x: hidden;
+        }
+        .container {
+            display: flex;
+            flex-direction: row; /* 修改为行布局 */
+            height: 100vh;
+        }
+        .header {
+            background-color: #1976D2;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 18px;
+            width: 100%; /* 使标题栏宽度占满整个屏幕 */
+        }
+        .table-container {
+              height: 100%; /* 占满高度 */
+              width: 55%; /* 占一半宽度 */
+              overflow-y: auto;
+              background-color: white;
+              border-right: 2px solid #ddd; /* 添加右侧边框 */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+        th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background-color: #838282;
+        }
+        .stock-code {
+            color: #1976D2;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .iframe-container {
+              height: 100%; /* 占满高度 */
+              width: 45%; /* 占一半宽度 */
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .bk-header {
+            background-color: #e0e0e0;
+            font-weight: bold;
+        }
+        .bk-header td {
+            padding: 10px 12px;
+            text-align: center !important;  /* 添加这一行使板块名称居中 */
+        }
+    </style>
+</head>
+
+<body>
+    <audio id="myAudio" controls style="display: none;">
+        <source src="res/piao.mp3" type="audio/mpeg">
+        您的浏览器不支持音频播放。
+    </audio>
+   
+            <div class="main">
+                <div class="container">
+                    <div class="table-container">
+                        <table id="stockTable">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>股票代码</th>
+                                    <th>股票名称</th>
+                                    <th>涨幅</th>
+                                    <th>圆直径</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockData"></tbody>
+                        </table>
+
+                    </div>
+                    <div class="iframe-container">
+                        <iframe id="contentFrame" src="大单资金插件.html##002238##天威视讯"></iframe>
+                    </div>
+                </div>
+            </div>
+            
+       
+<script>
+
+        // 配置
+        const config = {
+            dataUrl: 'http://124.220.164.77/kpl.asp?ver=1.0&listdata=dadan&macadd=H2F8AEB1B64BE12', // 替换为你的JSON数据URL
+            refreshInterval: 60000, // 10秒刷新一次
+            iframeBaseUrl: '大单资金插件.html' // iframe基础URL，点击股票代码后会拼接代码
+        };
+
+        // 存储当前显示的数据，按板块分组
+        let groupedData = {};
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 开始轮询数据
+            fetchData();
+            setInterval(fetchData, config.refreshInterval);
+        });
+
+        // 获取数据
+        function fetchData() {
+
+            fetch(config.dataUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('网络响应不正常');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    processNewData(data);
+                })
+                .catch(error => {
+                    console.error('获取数据出错:', error);
+                });
+        }
+
+        // 处理新数据，更新表格
+        function processNewData(newData) {
+            document.querySelectorAll('.newRow').forEach(element => {
+                element.remove();
+            });
+            // 检查是否有新数据
+            let hasNewData = false;
+			let ycode
+
+            newData.forEach(item => {
+                if (ycode == item.stock_code) return;
+                ycode = item.stock_code;
+                const bkName = item.bk_name || '未分类';
+                if (!groupedData[bkName]) {
+                    groupedData[bkName] = [];
+                }
+                
+                // 检查是否已存在相同数据
+                const exists = groupedData[bkName].some(existingItem => 
+                    JSON.stringify(existingItem) === JSON.stringify(item)
+                );
+                
+                if (!exists) {
+                    groupedData[bkName].unshift(item); // 添加到板块数组开头
+                    hasNewData = true;
+                }
+            });
+
+            if (!hasNewData) {
+                return; // 没有新数据，不更新
+            }
+
+            // 限制每个板块最多显示的数据量
+            Object.keys(groupedData).forEach(bkName => {
+                groupedData[bkName] = groupedData[bkName].slice(0, 50); // 每个板块最多50条
+            });
+
+            // 清空表格
+            const stockDataEl = document.getElementById('stockData');
+            stockDataEl.innerHTML = '';
+
+            // 按板块名称排序
+            const sortedBkNames = Object.keys(groupedData).sort();
+
+            // 重新渲染所有数据
+            sortedBkNames.forEach(bkName => {
+                const bkItems = groupedData[bkName];
+                
+                if (bkItems.length === 0) return;
+                
+                // 添加板块标题行
+                const bkHeaderRow = document.createElement('tr');
+                bkHeaderRow.className = 'bk-header';
+                bkHeaderRow.innerHTML = `
+                    <td colspan="5">${bkName}</td>
+                `;
+                stockDataEl.appendChild(bkHeaderRow);
+                // 时间倒排
+                bkItems.sort(function(a, b) {
+                    return b.realtime.localeCompare(a.realtime);//按时间倒序
+                });
+                // 添加该板块下的所有股票数据
+                const bkItems_filter = filterUniqueByKey(bkItems, 'stock_code');
+                bkItems_filter.forEach(item => {
+                    const row = document.createElement('tr');
+                    
+                    row.innerHTML = `
+                        <td>${item.realtime || '-'}</td>
+                        <td class="stock-code" data-code="${item.stock_code}" data-name="${item.stock_name}">${item.stock_code || '-'}</td>
+                        <td>${item.stock_name || '-'}</td>
+                        <td>${item.profit || '-'}</td>
+                        <td>${Math.round(item.circle) || '-'}</td>
+                    `;
+                    
+                    stockDataEl.appendChild(row);
+                });
+            });
+            addClickLink('.stock-code')
+
+        }
+        function filterUniqueByKey(arr, key) {
+            let seen = new Set();
+            return arr.filter(item => {
+                const value = item[key];
+                if (seen.has(value)) return false;
+                seen.add(value);
+                return true;
+            });
+        }
+        function addClickLink(className){
+            // 为股票代码添加点击事件
+            document.querySelectorAll(className).forEach(element => {
+                element.addEventListener('click', function() {
+                    const stockCode = this.getAttribute('data-code');
+                    const stockName = this.getAttribute('data-name');
+                    
+                    if (stockCode) {
+                        const contentFrame = document.getElementById('contentFrame');
+                        contentFrame.src = config.iframeBaseUrl + "##" + stockCode + "##" + stockName;
+                    }
+                });
+            });            
+        }
+
+
+</script>
+</body>
+
+</html>

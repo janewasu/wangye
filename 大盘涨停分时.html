@@ -1,0 +1,2245 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	
+		<link href="css/text.css" rel="stylesheet" type="text/css" />
+		<style type="text/css">
+			p {margin:0px;}
+			body {
+				background-color: #141212;
+			}
+			#box{
+				display:inline-block;
+				margin:0px 5px 0px 80px;
+				border-box:50%;
+				width:10px;
+				height:10px;
+			}
+			.fixedBox{
+				border: 1px solid #555555;
+				
+			}
+			.fixedBox::-webkit-scrollbar {
+				width: 10px;
+				height: 10px;
+			}
+      .tabs {
+        padding-top: 0px;
+        display: flex;
+        align-items: center;
+        margin-bottom: 0px;
+      }
+      
+      .tabs span {
+        cursor: pointer;
+        padding: 5px 7px;
+        margin-right: 10px;
+        background-color: #222222;
+        color: #e0e0e0;
+        border-radius: 4px;
+        transition: background-color 0.3s;
+      }
+      .filter-dropdown {
+        height: 24px;
+      }
+      .tabs span:hover,
+      .tabs .active {
+        background-color: #800000;
+      }
+      #tempTitle {
+        margin-bottom: 0;
+      }
+	.custom-button {
+		display: inline-flex; /* 设置为内联弹性盒模型 */
+		justify-content: center; /* 水平居中 */
+		align-items: center; /* 垂直居中 */
+		padding: 1px; /* 根据需要调整内边距 */
+		margin-right: 30px;
+		margin-top: 0px;
+		/* 其他样式，如背景色、边框等 */
+	}
+	
+	.custom-button img {
+		/* 调整图片大小或样式 */
+		height: 16px; /* 示例值，根据实际需要调整 */
+		width: auto; /* 保持图片原始宽高比 */
+		vertical-align: middle; /* 对于非flexbox布局，可能需要此属性 */
+	}
+		</style>
+		<script type="text/javascript" src="js/json2html.js"></script>
+		<script type="text/javascript" src="js/jquery.min.js"></script>
+		<script type="text/javascript" src="DatePicker/WdatePicker.js"> </script>
+		<script type="text/javascript" src="js/echarts.js"></script>
+	</head>
+	<body>
+		<div id="towrite" class="fixedBox" style="display:none;">
+		<div>
+        	<button class="custom-button" onclick="togglePlaySound()"><span id="spanPlaySound" >开</span><img src="res/laba.jpg" class="button-image"></button>
+			<audio id="buyAudio" src="res/alert1.mp3" preload="auto"></audio>
+			<audio id="sellAudio" src="res/alert2.mp3" preload="auto"></audio>
+		</div>
+      <div class="tabs">
+        <span class="tab-main active" onclick="handleClick(0)">全部</span>
+        <span class="tab-buy" onclick="handleClick(1)">买单</span>
+        <span class="tab-out" onclick="handleClick(2)">卖单</span>
+        <select onchange="handleChange()" class="filter-dropdown" id="valueFilter">
+          <option value="0">全部</option>
+          <option value="1000000">100万</option>
+          <option value="3000000">300万</option>
+          <option value="5000000">500万</option>
+          <option value="10000000">1000万</option>
+        </select>
+        <select onchange="handleDaysChange()" class="filter-dropdown" id="daysFilter" style="margin-left: 10px;">
+          <option value="1">1日</option>
+          <option value="2">2日</option>
+          <option value="3">3日</option>
+          <option value="5">5日</option>
+        </select>
+        <div id="tempTitle"></div>
+      </div>
+      <div id="marketInfoContainer" style="display:none; position:absolute; top:0; left:100; right:0; text-align:center; background-color:rgba(30,30,30,0.8); padding:4px 0; z-index:10; border-bottom:1px solid #333; color:#ccc;">
+        <div id="marketInfoPanel" style="font-size:12px; line-height:18px;"></div>
+      </div>
+      <div id="title" style="height:20px;"></div>
+			<div id="chart" style="position:relative; float:left;"></div>
+			<!-- <div id="towrite1" class="fixedBox" style="position:relative; float:left;margin-top:-18px;"></div> -->
+		</div>
+		
+		<script>
+      // 获取数据
+	  let codeBigMoneyLastTimeMap = {}; // 股票代码最新大资金时间Map
+	  let bigmoneyPlaySoundFlag = false; // 大资金语言播报开关
+      var scatterData = []
+      let circleType = 0
+      let circlePrice = 0
+      const fn = (val) => {
+        let val1 = val
+        if (val1.indexOf("万") != -1) {
+          val1 = parseFloat(val1) * 10000;
+        } else if (val1.indexOf("亿") != -1) {
+          val1 = parseFloat(val1) * 100000000;
+        } else {
+          val1 = parseFloat(val1);
+        }
+        return val1
+      }
+
+	  const togglePlaySound = () => {
+		bigmoneyPlaySoundFlag = !bigmoneyPlaySoundFlag;
+		if (bigmoneyPlaySoundFlag) {
+			playsound(true)
+			let spanPlaySound = document.getElementById('spanPlaySound');
+			spanPlaySound.textContent = '关';
+		} else {
+			let spanPlaySound = document.getElementById('spanPlaySound');
+			spanPlaySound.textContent = '开';
+		}
+	  }
+
+      const playsound = (isbuy) => {
+		console.log('playsound')
+		let audioId = 'buyAudio';
+		if (!isbuy) {
+			audioId = 'sellAudio';
+		}
+		let audioElement = document.getElementById(audioId);
+  		audioElement.play();
+      }
+
+      const handleClick = (num) => {
+        const arrs = ['tab-main', 'tab-buy', 'tab-out']
+        arrs.forEach((v, i) => {
+          const ele = document.querySelector('.' + v)
+          ele.classList.remove('active')
+          if (num === i) {
+            ele.classList.add('active')
+            circleType = i
+          }
+        })
+        v = 1
+        getSource()
+      }
+      const handleChange = (val) => {
+        circlePrice = document.querySelector('#valueFilter').value
+        v = 1
+        getSource()
+      }
+      const handleDaysChange = () => {
+        selectedDays = parseInt(document.querySelector('#daysFilter').value);
+        v = 1;
+        getSource();
+      }
+
+      let selectedDays = 1; // 默认显示1日
+
+      function getScatterData(dm) {
+		dest_url = 'http://vaserviece.10jqka.com.cn/Level2/index.php?&op=mainMonitorDetail&stockcode='+dm;
+		console.log('getScatterData', dest_url)
+        $.ajax({
+          url: 'http://vaserviece.10jqka.com.cn/Level2/index.php?&op=mainMonitorDetail&stockcode='+dm,
+          type: "get",
+          // dataType: "text",
+          async : false,
+          cache:false,
+          timeout:30000,
+          success: function(data) {
+            const temp = JSON.parse(data)
+            scatterData = []
+            let listTemp = temp.list
+            listTemp = listTemp.filter((v) => {
+              return  (circleType !== 0 ? v.tradetype == circleType : true) && (circlePrice !== 0 ? fn(v.value) > circlePrice : true)
+            })
+
+			let isbuy = false;
+			let bigmoney = false;
+			let bigmoneyLastTime = '';
+            listTemp.forEach((item) => {
+              const curTime = item.ctime.slice(0, 5)
+              item.realTime = curTime
+              item.realVolumn = Math.floor(item.volume.split('手')[0])
+              item.realValue = Math.floor(item.value.split('万')[0])
+              item.others = [
+                {
+                  realVolumn: item.volume,
+                  realValue: item.value,
+                  nature: item.nature
+                }
+              ]
+              const isBuy = item.tradetype === '1'
+			  // 判断是否超过500万
+			  if (item.realValue >= 500) {
+				bigmoney = true;
+			  	isbuy = isBuy;
+				bigmoneyLastTime = item.realTime;
+				console.log('getScatterData', isbuy, item.realTime, item.realValue, item.realVolumn);
+			  }
+              if (!isBuy) {
+                item.realValue = -item.realValue
+                item.realVolumn = -item.realVolumn
+              }
+              const isExistScatter = scatterData.find(v => v.realTime === curTime)
+              if (isExistScatter) {
+                isExistScatter.realValue = isExistScatter.realValue + item.realValue
+                isExistScatter.realVolumn =  isExistScatter.realVolumn + item.realVolumn
+                isExistScatter.others.push({
+                  realVolumn: item.volume,
+                  realValue: item.value,
+                  nature: item.nature
+                })
+              } else {
+                scatterData.push(item)
+              }
+            })
+           
+            const fn2 = (val) => {
+              val = Math.abs(val)
+              let num = 10000
+              var sizesValue = ''
+              /**
+               * 判断取哪个单位
+               */
+              if(val < 1000){
+                // 如果小于1000则直接返回
+                sizesValue = ''
+                return val
+              }else if(val > 1000 && val < 9999){
+                sizesValue = '千'
+              } else if(val > 10000 && val < 99999999){
+                sizesValue = '万'
+              } else if(val > 100000000){
+                sizesValue = '亿'
+              }
+              /**
+               * 大于一万则运行下方计算
+               */
+              let i = Math.floor(Math.log(val) / Math.log(num))
+              /**
+               * toFixed(0)看你们后面想要取值多少，我是不取所以填了0，一般都是取2个值
+               */
+              var sizes = ((val / Math.pow(num, i))).toFixed(0)
+              sizes = sizes + sizesValue
+              return sizes
+            }
+            const temp3 = (fn(temp.title.mainbuy) - fn(temp.title.mainsell)).toFixed(0)
+            const temp2 = temp3 < 0 ? '-' + fn2(temp3) : fn2(temp3)
+            const tempColor1 = temp3 < 0 ? 'green' : 'red'
+            
+            // 生成股票信息和竞价链接
+            var stockInfo = "";
+            var jjLink = "";
+            
+            if(yy == 1){
+                stockInfo = '&nbsp;&nbsp;&nbsp;' + gpdm + "&nbsp;&nbsp;&nbsp;" + gpmc + "&nbsp;&nbsp;&nbsp;" + (selectedDays > 1 ? selectedDays + "日" : rq);
+                jjLink = '<a href="javascript:getSource(' + (jk == 0 ? '1' : '0') + ');"  id="jj"  style="padding-left:20px;font-size:14px;">竞价</a>';
+            }
+            
+            // 整合主力信息和股票信息到同一行
+            document.getElementById('tempTitle').innerHTML = `主力买：<span style="color:red;margin-right:6px;">${temp.title.mainbuy}</span>主力卖：<span style="color:green;margin-right:6px;">${temp.title.mainsell}</span>主力净：<span style="color:${tempColor1};margin-right:6px;">${temp2}</span>${stockInfo}${jjLink}`;
+            
+            // 如果启用了竞价链接，设置其颜色
+            if(yy == 1 && jjLink != ""){
+                var aObj = document.getElementById("jj");
+                aObj.style.color = jk == 1 ? "#00FFFF" : "#fff";
+            }
+			
+			// 大资金播放提示音
+			if (bigmoney) {
+				//  出现大资金比较上次播放时间戳，如果时间戳有变更再播放
+				if (!(dm in codeBigMoneyLastTimeMap) || (codeBigMoneyLastTimeMap[dm] < bigmoneyLastTime)) {
+					console.log('getSource', dm, bigmoneyLastTime)
+					// 更新最新播放时间
+					codeBigMoneyLastTimeMap[dm] = bigmoneyLastTime;
+					// 如果语音播报开关未打开则不进行播音
+					if (bigmoneyPlaySoundFlag) {
+						playsound(isbuy);
+					}
+				}
+			}
+          },
+          error: function(xhr, status, errorThrown) {
+            console.log(xhr, status, errorThrown);
+          }
+        });
+      }
+			var yy = 1;  //部分显示（小图）；
+			window.onload = function() {
+				changeStyle();
+				getSource(jk);
+				// 添加调用市场信息显示函数
+				fetchMarketInfo();
+			}
+
+			$(function() {
+				setInterval(function() {
+					getSource(jk);
+				},
+				300);
+			})
+			
+			function time_range(beginTime, endTime) {
+				var strb = beginTime.split(":");
+				if (strb.length != 2) {
+					return false;
+				}
+
+				var stre = endTime.split(":");
+				if (stre.length != 2) {
+					return false;
+				}
+
+				var b = new Date();
+				var e = new Date();
+				var n = new Date();
+
+				b.setHours(strb[0]);
+				b.setMinutes(strb[1]);
+				e.setHours(stre[0]);
+				e.setMinutes(stre[1]);
+
+				console.log('time_range', n.getTime(), b.getTime(), e.getTime());　　　　　　
+				if (n.getTime() - b.getTime() > 0 && n.getTime() - e.getTime() < 0) {
+					v = 1;
+					console.log('time_range', true);　　　　　　
+					return true;
+				} else {
+					console.log('time_range', false);
+				    return false;
+				}
+			}　　　
+   　　　
+			function changeStyle() {
+				var div = document.getElementById("towrite");
+				div.style.display= "block";
+				//div.style.border= "1px solid #fff";
+				div.style.border= "none";
+				div.style.marginTop= "-10px";
+				div.style.left= "0px";
+				div.style.width= "100%";
+				div.style.height= "100%";
+				div.style.fontSize="12px";
+				
+				var div1 = document.getElementById("chart");
+				div1.style.border= "1px solid #696969";
+				div1.style.marginTop= "-10px";
+				div1.style.left= "0px";
+				div1.style.width= "99%";
+				
+				// 对于上证指数，调整图表高度为更合适的值
+				if(gpdm == "999999"){
+					div1.style.height= "100vh"; // 使用视口高度单位
+				} else {
+					div1.style.height= "99%";
+				}
+				
+
+			}
+			
+			Date.prototype.Format = function (fmt) {
+				var o = {
+				"M+": this.getMonth() + 1, //月份
+				"d+": this.getDate(), //日
+				"h+": this.getHours(), //小时
+				"m+": this.getMinutes(), //分
+				"s+": this.getSeconds(), //秒
+				"q+": Math.floor((this.getMonth() + 3) / 3), //季度
+				"S": this.getMilliseconds() //毫秒
+				};
+				if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+				for (var k in o)
+				if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+				return fmt;
+			};
+			
+			function keepTwoDecimal(num) {
+               var result = parseFloat(num);
+               if (isNaN(result)) {
+                   return false;
+               }
+               result = Math.round(num * 100) / 100;
+               return result;
+			}
+			
+			function NumberTransform(num) {
+				var result = num;
+				if(Math.abs(num) > 100000000){
+					result = num / 100000000;
+					result = result.toFixed(0) + "亿";
+				}else if(Math.abs(num) > 10000){
+					result = num/10000;
+					result = result.toFixed(0) + "万";
+				}
+				return result;
+			};
+			
+			var z = 0;  //刷新
+			var v = 0;	//刷新
+			var gpdm = "";
+			var gpmc = "";
+			var rq = "";
+			var preClose = 0;	//昨收盘
+			var jk = 0;  //默认是否显示竞价
+			function getSource(p) {
+				var u = decodeURI(window.location.href);
+				var dm = "";
+				if(u.indexOf("##") > -1){
+					var gp = u.split('##');
+					dm = gp[1];
+					gpmc = gp[2];
+					if(gp[3] != undefined){
+						yy = gp[3];
+					}
+				}
+				if (dm == 'xxxxxx' || dm == ''){
+					dm = "999999";
+					gpmc = "上证指数";
+				}
+				
+				console.log('getSource', dm, gpdm, v, p, jk, selectedDays);
+				if(dm != gpdm || v == 1 || p != jk){
+					//alert(p)
+					console.log('dm != gpdm || v == 1 || p != jk');
+					v = 0;
+					jk = p;
+					gpdm = dm;
+					var dms = "";
+					var dmt = "";
+					if(dm.substr(0,1)=="6"){
+						dms = "SH" + dm;
+						dmt = "1." + dm;
+					}else{
+						dms = "SZ" + dm;
+						dmt = "0." + dm;
+					}
+					
+					if(dm == "999999"){
+						dmt = "1.000001";
+					}else if(dm.substr(0,3)=="399"){
+						dmt = "0." + dm;
+					}
+					
+					var url ="http://push2his.eastmoney.com/api/qt/stock/trends2/get?fields1=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13&fields2=f51,f52,f53,f54,f55,f56,f57,f58&ndays=" + selectedDays + "&secid=" + dmt;
+					var res = [];
+					$.ajax({
+						type: "get",
+						url: url,
+						dataType: "json",
+						async : false,
+						cache:false,
+						timeout:3000,
+						success: function(data) {
+							//alert(JSON.stringify(data))
+							//document.write(JSON.stringify(data));
+							preClose = data.data.preClose;
+							var arr = data.data.trends;
+							//document.write(JSON.stringify(arr));
+							
+							// 保存日期标记，用于在图表上标记不同日期
+							let dateBoundaries = [];
+							let currentDate = "";
+							
+							for (var i = 0; i < arr.length; i++){
+								var aa = arr[i].split(',');
+								let timeStr = aa[0].split(" ");
+								let dateStr = timeStr[0];
+								let timeOnly = timeStr[1];
+								
+								// 记录日期边界
+								if(dateStr !== currentDate) {
+									currentDate = dateStr;
+									if(i > 0) {
+										dateBoundaries.push({
+											index: i,
+											date: dateStr
+										});
+									}
+								}
+								
+								if(i == 0){
+									rq = dateStr;
+								}
+								
+								if(jk == 0){
+									if(Number(timeOnly.replace(":","")) >= 930){
+										var rc = {"time": timeOnly, "date": dateStr, "fullTime": aa[0], "open":Number(aa[1]),"close":Number(aa[2]),"high":Number(aa[3]),"low":Number(aa[4]),"vol":Number(aa[5]),"jprice":Number(aa[7])}
+										res.push(rc);
+									}
+								}else{
+									var rc = {"time": timeOnly, "date": dateStr, "fullTime": aa[0], "open":Number(aa[1]),"close":Number(aa[2]),"high":Number(aa[3]),"low":Number(aa[4]),"vol":Number(aa[5]),"jprice":Number(aa[7])}
+									res.push(rc);
+								}
+							}
+							
+							// 将日期边界保存到全局，供图表使用
+							window.dateBoundaries = dateBoundaries;
+						}
+					})
+          			getScatterData(dm)
+					
+					// 将原有的title div高度设为0，避免空白
+					var div = document.getElementById('title');
+					div.style.height = "0px";
+					
+					GetChart(res);
+					
+					// 如果是上证指数，立即刷新市场信息
+					if(dm == "999999") {
+						fetchMarketInfo();
+					}
+				} else {
+					//console.log('getSource', z);
+					z++;
+					if(z == 60){
+						z = 0;
+						time_range("9:00","15:15")  //刷新数据
+						//time_range("9:00","23:15")  //测试, 刷新数据
+					}
+				}
+			}
+			
+			function getParamValues(name, arr) {
+				var ret = []
+				var len = 240 * selectedDays; 
+				if(jk == 0){
+					len = 240 * selectedDays; 
+				}				
+				len = Math.min(len, arr.length + 5);			
+				let dateBoundaryIndices = [];
+				if(selectedDays > 1 && window.dateBoundaries && window.dateBoundaries.length > 0 && (name === "jprice" || name === "close")) {
+					dateBoundaryIndices = window.dateBoundaries.map(boundary => boundary.index);
+				}
+				
+				for (var i = 0; i < len; i++) {
+					if(arr[i] != undefined){
+						if((name === "jprice" || name === "close") && selectedDays > 1 && dateBoundaryIndices.includes(i)) {
+							ret.push(null);
+						} else {
+							ret.push(arr[i][name]);
+						}
+					}else{
+						ret.push(null);
+					}
+				}
+				return ret;
+			}
+			
+			// 计算移动平均线函数
+			function calculateMA(data, period) {
+				var result = [];
+				let dateBoundaryIndices = [];
+				if(selectedDays > 1 && window.dateBoundaries && window.dateBoundaries.length > 0) {
+					dateBoundaryIndices = window.dateBoundaries.map(boundary => boundary.index);
+				}
+				
+				for (var i = 0; i < data.length; i++) {
+					if(selectedDays > 1 && dateBoundaryIndices.includes(i)) {
+						result.push(null);
+						continue;
+					}					
+					if (i < period - 1) {
+						result.push(null);
+						continue;
+					}					
+					var sum = 0;
+					var count = 0;
+					// 向前计算period个值的平均
+					for (var j = 0; j < period; j++) {
+						if (i - j >= 0 && data[i - j] !== null && data[i - j] !== undefined) {
+							sum += data[i - j];
+							count++;
+						}
+					}
+					result.push(count > 0 ? sum / count : null);
+				}
+				return result;
+			}			
+			function ratioCalculate(price, yclose) { 
+			  return ((price - yclose) / yclose * 100).toFixed(2);
+			}
+			function calculateRollingHighLow(arr, minutes) {
+				const windowSize = minutes; 
+				const result = {
+					highPoints: [],  
+					lowPoints: [],  
+					highBreakPoints: [], 
+						lowBreakPoints: [] 
+				};				
+				if (!arr || arr.length < windowSize) {
+					console.log('数据不足，添加测试数据');
+					if (arr && arr.length > 10) {
+						const startIdx = 5;
+						const endIdx = arr.length - 5;
+						const midValue = arr[Math.floor(arr.length/2)]?.close || 0;						
+						result.highPoints.push({
+							coord: [startIdx, midValue * 1.01],
+							value: midValue * 1.01,
+							ongoing: true,
+							symbolSize: 0
+						});
+						
+						result.highPoints.push({
+							coord: [endIdx, midValue * 1.01],
+							value: midValue * 1.01,
+							ongoing: true,
+							symbolSize: 0
+						});
+						result.lowPoints.push({
+							coord: [startIdx, midValue * 0.99],
+							value: midValue * 0.99,
+							ongoing: true,
+							symbolSize: 0
+						});
+						
+						result.lowPoints.push({
+							coord: [endIdx, midValue * 0.99],
+							value: midValue * 0.99,
+							ongoing: true,
+							symbolSize: 0
+						});
+					}
+					return result;
+				}
+				let prevHighVal = -Infinity;
+				let prevLowVal = Infinity;
+				let prevHighIdx = -1;
+				let prevLowIdx = -1;
+				let isHighLineContinue = true;
+				let isLowLineContinue = true;
+				for (let i = windowSize; i < arr.length; i++) {
+					if (!arr[i]) {
+						continue;
+					}
+					let windowHighVal = -Infinity;
+					let windowLowVal = Infinity;
+					let windowHighIdx = -1;
+					let windowLowIdx = -1;
+					
+					for (let j = i - windowSize; j < i; j++) {
+						if (j < 0 || !arr[j]) continue;
+						let isAuctionPeriod = false;
+						if (arr[j].time) {
+							if (!selectedDays || selectedDays === 1 || 
+							   (selectedDays > 1 && arr[j].date === arr[arr.length-1].date)) {
+								const timeValue = arr[j].time.replace(':', '');
+								if (timeValue >= '915' && timeValue <= '920') {
+									isAuctionPeriod = true;
+								}
+							}
+						}
+						if (isAuctionPeriod) {
+							continue;
+						}
+						let highValue = arr[j].high;
+						let lowValue = arr[j].low;
+						if (highValue === undefined || highValue === null) {
+							highValue = arr[j].close;
+						}
+						
+						if (lowValue === undefined || lowValue === null) {
+							lowValue = arr[j].close;
+						}
+						if (highValue > windowHighVal) {
+							windowHighVal = highValue;
+							windowHighIdx = j;
+						}
+						if (lowValue < windowLowVal) {
+							windowLowVal = lowValue;
+							windowLowIdx = j;
+						}
+					}
+					let currentClose = arr[i].close;
+					if (currentClose === undefined || currentClose === null) {
+						continue; 
+					}
+					if (windowHighIdx >= 0 && windowLowIdx >= 0) {
+						if (windowHighVal > prevHighVal || prevHighIdx < 0) {
+							prevHighVal = windowHighVal;
+							prevHighIdx = windowHighIdx;
+							isHighLineContinue = true;
+							result.highPoints.push({
+								coord: [prevHighIdx, prevHighVal],
+								value: prevHighVal,
+								ongoing: true,
+								symbolSize: 0 
+							});
+						}
+						if (windowLowVal < prevLowVal || prevLowIdx < 0) {
+							prevLowVal = windowLowVal;
+							prevLowIdx = windowLowIdx;
+							isLowLineContinue = true;
+							result.lowPoints.push({
+								coord: [prevLowIdx, prevLowVal],
+								value: prevLowVal,
+								ongoing: true,
+								symbolSize: 0 
+							});
+						}
+						if (isHighLineContinue && currentClose > prevHighVal) {
+							isHighLineContinue = false;
+							result.highBreakPoints.push({
+								coord: [i, prevHighVal], 
+								value: '突破',
+								itemStyle: {
+									color: '#FF0000' 
+								},
+								symbol: 'arrow',
+								symbolSize: 10,
+								symbolRotate: 0 
+							});
+							const lastHighPoint = result.highPoints[result.highPoints.length - 1];
+							if (lastHighPoint) {
+								lastHighPoint.ongoing = false;
+								result.highPoints.push({
+									coord: [i, prevHighVal],
+									value: prevHighVal,
+									ongoing: false,
+									symbolSize: 0 
+								});
+							}
+						}
+						if (isLowLineContinue && currentClose < prevLowVal) {
+							isLowLineContinue = false;
+							result.lowBreakPoints.push({
+								coord: [i, prevLowVal], 
+								value: '突破',
+								itemStyle: {
+									color: '#00FF00' 
+								},
+								symbol: 'arrow',
+								symbolSize: 10,
+								symbolRotate: 180 
+							});
+							const lastLowPoint = result.lowPoints[result.lowPoints.length - 1];
+							if (lastLowPoint) {
+								lastLowPoint.ongoing = false;
+								result.lowPoints.push({
+									coord: [i, prevLowVal],
+									value: prevLowVal,
+									ongoing: false,
+									symbolSize: 0 
+								});
+							}
+						}
+						if (isHighLineContinue) {
+							result.highPoints.push({
+								coord: [i, prevHighVal],
+								value: prevHighVal,
+								ongoing: true,
+								symbolSize: 0 
+							});
+						}						
+						if (isLowLineContinue) {
+							result.lowPoints.push({
+								coord: [i, prevLowVal],
+								value: prevLowVal,
+								ongoing: true,
+								symbolSize: 0 
+							});
+						}
+					}
+				}
+				
+				return result;
+			}
+			
+		</script>
+		<script>
+			function GetChart(arr) {
+				function numToChinese(num) {
+					const map = {1:'一',2:'二',3:'三',4:'四',5:'五',6:'六',7:'七',8:'八',9:'九',10:'十'};
+					return map[num] || num;
+				}
+				function getLimitUpStocks(callback) {
+					const baseUrl = 'https://apphq.longhuvip.com/w1/api/index.php';
+					const params = {
+						Order: '0',
+						a: 'DailyLimitPerformance', 
+						st: '100',
+						apiv: 'w21',
+						Type: '4',
+						c: 'HomeDingPan',
+						PhoneOSNew: '1'
+					};
+					const pidTypes = [
+						{type: '5', board: 5},
+						{type: '4', board: 4}, 
+						{type: '3', board: 3},
+						{type: '2', board: 2},
+						{type: '1', board: 1}
+					];
+					
+					let limitUpStocks = [];
+					let finished = 0;
+					console.log('开始获取涨停数据...');
+					
+					pidTypes.forEach(({type, board}) => {
+						const url = `${baseUrl}?${Object.entries({...params, PidType: type})
+							.map(([key, value]) => `${key}=${value}`)
+							.join('&')}`;
+						
+						console.log(`请求${board}板数据, URL:`, url);
+						
+						$.ajax({
+							url: url,
+							type: "get",
+							async: true,
+							timeout: 10000, 
+							success: function(data) {
+								try {
+									if (data && data.info && Array.isArray(data.info[0])) {
+										data.info[0].forEach(stock => {
+
+											const timestamp = parseInt(stock[4]);
+											if (isNaN(timestamp)) {
+												console.warn('无效的时间戳:', stock[4]);
+												return;
+											}
+											
+											const timeStr = formatTime(timestamp);
+											const stockInfo = {
+												code: stock[0],
+												name: stock[1],
+												time: timestamp,
+												timeStr: timeStr,
+												reason: stock[5] || '',
+												boardCount: board
+											};
+											
+											limitUpStocks.push(stockInfo);
+											console.log(`添加涨停股: ${board}板 ${stock[1]} ${timeStr}`);
+										});
+									} else {
+										console.warn(`${board}板数据格式异常:`, data);
+									}
+								} catch (e) {
+									console.error(`${board}板数据处理错误:`, e);
+								}
+								
+								finished++;
+								if (finished === pidTypes.length) {
+									console.log('涨停数据获取完成, 总数:', limitUpStocks.length);
+									limitUpStocks.sort((a, b) => a.time - b.time);
+									callback(limitUpStocks);
+								}
+							},
+							error: function(xhr, status, error) {
+								console.error(`${board}板数据请求失败:`, status, error);
+								finished++;
+								if (finished === pidTypes.length) {
+									console.log('涨停数据获取完成(部分失败), 总数:', limitUpStocks.length);
+									limitUpStocks.sort((a, b) => a.time - b.time);
+									callback(limitUpStocks);
+								}
+							}
+						});
+					});
+				}
+				function formatTime(timestamp) {
+					const date = new Date(timestamp * 1000);
+					const hours = date.getHours().toString().padStart(2, '0');
+					const minutes = date.getMinutes().toString().padStart(2, '0');
+					const seconds = date.getSeconds().toString().padStart(2, '0');
+					return `${hours}:${minutes}:${seconds}`;
+				}
+				function createMarkLinesFromPoints(points) {
+					if (!points || points.length < 2) return [];
+					
+					const markLines = [];
+					let startPoint = null;
+					let prevOngoing = true;
+					
+					for (let i = 0; i < points.length; i++) {
+						const point = points[i];
+						if (startPoint === null || prevOngoing !== point.ongoing) {
+							startPoint = point;
+							prevOngoing = point.ongoing;
+							continue;
+						}
+						if (i === points.length - 1 || point.ongoing !== points[i + 1].ongoing) {
+							if (startPoint.coord[0] !== point.coord[0]) {
+								markLines.push([
+									{ 
+										coord: [startPoint.coord[0], startPoint.coord[1]],
+										lineStyle: { 
+											width: 1.5 
+										}
+									},
+									{ 
+										coord: [point.coord[0], startPoint.coord[1]],
+										lineStyle: {
+											width: 1.5 
+										}
+									}
+								]);
+							}
+							startPoint = null;
+						}
+					}
+					if (markLines.length === 0 && points.length > 0) {
+						const firstPoint = points[0];
+						const lastPoint = points[points.length - 1];
+						if (firstPoint && lastPoint) {
+							markLines.push([
+								{ 
+									coord: [firstPoint.coord[0], firstPoint.coord[1]],
+									lineStyle: { 
+										width: 1.5 
+									}
+								},
+								{ 
+									coord: [lastPoint.coord[0], firstPoint.coord[1]], 
+									lineStyle: {
+										width: 1.5 
+									}
+								}
+							]);
+						}
+					}					
+					return markLines;
+				}
+				getLimitUpStocks(function(limitUpStocks) {
+					let timeGroup = {};
+					let earlyTimeGroup = {};
+					if(gpdm === "999999") {
+						console.log('开始处理涨停数据分组...');						
+						limitUpStocks.forEach(stock => {
+							// 从timeStr中提取HH:mm格式
+							let timeKey = stock.timeStr.slice(0,5);
+							const formattedTimeKey = timeKey;
+							if (!/^\d{2}:\d{2}$/.test(timeKey)) {
+								console.warn('无效的时间格式:', timeKey, stock);
+								return;
+							}							
+							// 判断是否是竞价期间的涨停
+							const timeValue = Number(timeKey.replace(':', ''));
+							if (timeValue >= 925 && timeValue <= 930) {
+								// 竞价期间的涨停股票，存入earlyTimeGroup
+								if (!earlyTimeGroup[timeKey]) {
+									earlyTimeGroup[timeKey] = [];
+								}
+								earlyTimeGroup[timeKey].push(stock);
+								console.log(`竞价期间分组: ${timeKey} - ${stock.boardCount}板 ${stock.name}`);
+							} else {
+								// 正常交易时段的涨停股票
+								if (!timeGroup[timeKey]) {
+									timeGroup[timeKey] = [];
+								}
+								timeGroup[timeKey].push(stock);
+								console.log(`分组: ${timeKey} - ${stock.boardCount}板 ${stock.name}`);
+							}
+						});
+						Object.keys(earlyTimeGroup).forEach(timeKey => {
+							earlyTimeGroup[timeKey].sort((a, b) => {
+								if (b.boardCount !== a.boardCount) {
+									return b.boardCount - a.boardCount;
+								}
+								return a.time - b.time;
+							});							
+							console.log(`竞价时间点 ${timeKey} 排序后:`, 
+								earlyTimeGroup[timeKey].map(s => `${s.boardCount}板${s.name}`).join(', '));
+						});						
+						Object.keys(timeGroup).forEach(timeKey => {
+							timeGroup[timeKey].sort((a, b) => {
+								if (b.boardCount !== a.boardCount) {
+									return b.boardCount - a.boardCount;
+								}
+								return a.time - b.time;
+							});							
+							console.log(`时间点 ${timeKey} 排序后:`, 
+								timeGroup[timeKey].map(s => `${s.boardCount}板${s.name}`).join(', '));
+						});
+					}
+					var res = getParamValues("close", arr);
+					var ma250Data = calculateMA(res, 250);
+					var rollingHighLow = calculateRollingHighLow(arr, 30);
+					console.log('开始处理价格数据...');
+					var values = arr.map(function(o){
+						return o.close;
+					}).filter(function(val) {
+						return val !== null;
+					});
+					
+					if (values.length === 0) {
+						console.warn('没有有效的价格数据');
+						return;
+					}
+					
+					console.log(`处理了 ${values.length} 个有效价格点`);
+					
+					var maxa = Math.max(...values);
+					var mina = Math.min(...values);
+					console.log(`最高价: ${maxa}, 最低价: ${mina}, 昨收: ${preClose}`);
+					
+					var zfa = Math.abs((maxa / preClose - 1));
+					var zfb = Math.abs((mina / preClose - 1));
+					console.log(`最大涨幅: ${(zfa*100).toFixed(2)}%, 最大跌幅: ${(zfb*100).toFixed(2)}%`);
+					
+					function min() {
+						if(gpdm == "999999"){
+							const jpriceValues = arr.map(o => o.jprice).filter(val => val !== null);
+							if (jpriceValues.length === 0) {
+								const maxChange = Math.max(zfa, zfb);
+								return Number(preClose * (1 - maxChange * 1.1)).toFixed(2);
+							}
+							const maxJPrice = Math.max(...jpriceValues);
+							const minJPrice = Math.min(...jpriceValues);
+							const jZfa = Math.abs((maxJPrice / preClose - 1));
+							const jZfb = Math.abs((minJPrice / preClose - 1));
+							const maxChange = Math.max(jZfa, jZfb, zfa, zfb);
+							return Number(preClose * (1 - maxChange * 1.1)).toFixed(2);
+						} else {
+							const maxChange = Math.max(zfa, zfb);
+							return Number(preClose * (1 - maxChange)).toFixed(2);
+						}
+					}
+					function max() {
+						if(gpdm == "999999"){
+							const jpriceValues = arr.map(o => o.jprice).filter(val => val !== null);
+							if (jpriceValues.length === 0) {
+								const maxChange = Math.max(zfa, zfb);
+								return Number(preClose * (1 + maxChange * 1.1)).toFixed(2);
+							}
+							const maxJPrice = Math.max(...jpriceValues);
+							const minJPrice = Math.min(...jpriceValues);
+							const jZfa = Math.abs((maxJPrice / preClose - 1));
+							const jZfb = Math.abs((minJPrice / preClose - 1));
+							const maxChange = Math.max(jZfa, jZfb, zfa, zfb);
+							return Number(preClose * (1 + maxChange * 1.1)).toFixed(2);
+						} else {
+							const maxChange = Math.max(zfa, zfb);
+							return Number(preClose * (1 + maxChange)).toFixed(2);
+						}
+					}					
+					var _interval = ((preClose-min()) / 4);
+					var left = "5%";
+					var right = "8%";
+					var fsize = "14";
+					var show = true;
+					if(yy == 0){
+						_interval = ((preClose-min()) / 2);
+						left = "3%";
+						right = "5%";
+						fsize = "12";
+						show = false;
+					}
+					if(selectedDays > 1) {
+						right = "5%";
+					}
+					
+					var jm = "09:30";
+					if(jk == 0){
+						jm = "";
+					}
+					function getScatterSourceData (arr) {
+						const time = getParamValues("time", arr);
+						const close = getParamValues("close", arr);
+						time.forEach((v, i) => {
+							if (selectedDays > 1 && arr[i]) {
+								const dateTimeKey = arr[i].date + ' ' + v;
+								const isExist = scatterData.find(scatter => scatter.realTime === v);
+								if (isExist) {
+									close[i] = arr[i].close; 
+								} else {
+									close[i] = 0;
+								}
+							} else {
+								const isExist = scatterData.find(scatter => scatter.realTime === v);
+								if (isExist) {
+								} else {
+									close[i] = 0;
+								}
+							}
+						});
+						return close;
+					}
+					var myChart = echarts.init(document.getElementById('chart'));
+					const upColor = '#ec0000';
+					const downColor = '#00FFFF';
+					var top2 = 68;
+					var top21 = top2 - 3;
+					let markLines = [];
+					if (selectedDays > 1 && window.dateBoundaries && window.dateBoundaries.length > 0) {
+						window.dateBoundaries.forEach(boundary => {
+							markLines.push({
+								xAxis: boundary.index,
+								label: {
+									show: false,
+									formatter: boundary.date,
+									position: 'middle',
+									color: '#ffffff',
+									fontSize: 10,
+									backgroundColor: 'rgba(70,70,70,0.3)',
+									padding: [2, 4]
+								},
+								lineStyle: {
+									color: '#cccccc', 
+									type: 'dashed',
+									width: 0.2        
+								}
+							});
+						});
+					}
+					var gridConfig;
+					if(gpdm == "999999"){
+						gridConfig = [
+							{
+								top: '3%',
+								left: left,
+								right: right,
+								height: '65%' 
+							},
+							{
+								top: '3%',
+								left: left,
+								right: right,
+								height: '65%'
+							},
+							{
+								top: '75%', 
+								left: left,
+								right: right,
+								height: '15%' 
+							}
+						];
+					} else {
+						gridConfig = [
+							{
+								top: '3%',
+								left: left,
+								right: right,
+								height: '58%'
+							},
+							{
+								top: '3%',
+								left: left,
+								right: right,
+								height: '58%'
+							},
+							{
+								top: top2 + "%",
+								left: left,
+								right: right,
+								height: '20%'
+							}
+						];
+					}
+					
+					var option = {
+						animation: false,
+						title: [
+							{
+								left: 'left',
+							},
+							{
+								left: 'left',
+							},
+							{
+								show: show,
+								top: gpdm == "999999" ? "72%" : (top21 + "%"),
+								left: 'left',
+								text: '成交量',
+								textStyle: {
+									color: "#fff", 
+									fontSize: fsize,
+								}
+							}
+						],
+						tooltip: { 
+							show: show,
+							trigger: 'axis',
+							position: function (point, params, dom, rect, size) {
+								return [point[0], point[1]];
+							},
+							formatter(params) { 
+								var str = '';
+								if (selectedDays > 1 && arr[params[0].dataIndex]) {
+									str = arr[params[0].dataIndex].date + ' ';
+								}
+								
+								str += params[0].name + '<br>';
+								
+								if(params[0].name != "null"){
+									params.forEach(item => {
+										var name = item.seriesName;
+										var c = '<span style="display:inline-block;margin-right:5px;border-radius:50%;width:10px;height:10px;left:5px;background-color:' + item.color + '"></span>';
+										if(name == "分时"){
+											str += c + '价格:' + item.data + "<br>";
+											str += c + '涨幅:' + ratioCalculate(item.data, preClose) + "%<br>";
+										}else if(name == "分时均价"){
+											str += c + '均价:' + item.data + "<br>";
+										}else if(name.indexOf("成交量") > -1){
+											str += c + item.seriesName + " : " + item.data + "<br>";
+										} else if(item.componentSubType === 'scatter') {
+											const temp = scatterData.find(v => v.realTime === item.axisValue)
+											if (temp && temp.others) {
+												const redSpan = '<span style="display:inline-block;margin-right:5px;border-radius:50%;width:10px;height:10px;left:5px;background-color:red"></span>';
+												const greenSpan = '<span style="display:inline-block;margin-right:5px;border-radius:50%;width:10px;height:10px;left:5px;background-color:green"></span>';
+												buyTotal = 0;
+												sellTotal = 0;
+												strTotal = '';
+											  	strDetail = '';
+												index = 0;
+												totals = temp.others.length;
+
+											  	temp.others.forEach((temp) => {									
+												
+													let isbuy = temp.nature.includes('买');
+													let realValue = Math.floor(temp.realValue.split('万')[0])
+													if (isbuy) {
+														buyTotal += realValue;
+														if (index > 20){
+															strDetail += redSpan + temp.realValue;
+															return; 
+														}else{
+															strDetail += redSpan + temp.nature + " : " + temp.realValue  + "<br>";
+														}												
+
+													} else {
+														sellTotal += realValue;
+														if (index > 20){
+															strDetail += greenSpan + temp.realValue;
+															return; 
+														}else{
+															strDetail += greenSpan + temp.nature + " : " + temp.realValue  + "<br>";
+														}
+													}
+
+													index++;
+
+											  	});
+												if (buyTotal>0) {
+													strTotal += redSpan+'主力买总 : '+buyTotal+"万<br>";
+												}
+												if (sellTotal>0) {
+													strTotal += greenSpan+'主力卖总 : '+sellTotal+"万<br>";
+												}
+												str += strTotal;
+												str += strDetail;
+											}
+										}
+									});
+									return str;
+								}
+							}
+						},
+						grid: gridConfig,
+						xAxis: [
+							{
+								//type: 'category',
+								gridIndex: 0,
+								data: getParamValues("time", arr),
+								axisLine: { show: false	}, 
+								axisTick: { show: false },
+								splitLine: { show: false },
+								axisLabel: { show: false },
+							},
+							{
+								show: false,
+								gridIndex: 1,
+								data: getParamValues("time", arr),
+								axisPointer: {show: false},
+							},
+							{
+								type: 'category',
+								gridIndex: 2,    
+								data: getParamValues("time", arr),
+								axisTick: { show: false },
+								axisLine:{ 
+									lineStyle:{
+										color:"#808080", 
+										width: 1  
+									}
+								},
+								axisLabel:{	 
+									showMaxLabel:true, 
+									interval: 0,
+									//padding: [0, 0, 0, 30],
+									formatter: function (value, index) {
+										if (selectedDays > 1) {
+											let dailyPoints = 240; 
+											let dayIndex = Math.floor(index / dailyPoints);
+											let dayPosition = index % dailyPoints;
+											if (dayPosition === 0 || dayPosition === 120 || dayPosition === 239) {
+												return value;
+											}
+											return '';
+										} else {
+											var c = index % 15;
+											if(yy == 0){
+												c = index % 60;
+											}
+											if(value != "null" && c == 0){
+												return value;
+											}
+										}
+									},
+									textStyle:{ 
+										color:"#FFF"
+									}
+								}
+							}
+						],
+						yAxis: [
+							{
+								type: 'value',
+								gridIndex: 0,
+								//position:'right',
+								//offset: 10,    
+								scale: true,  
+								splitArea: {     
+									show: false
+								},
+								min: min(),
+								max: max(),
+								interval: _interval,
+								splitLine:{ 
+									show:true,
+									lineStyle: {
+										color: '#cccccc',
+										width: 0.2,
+										type: 'dashed',
+									}
+								},
+								axisLine: { 
+									show: true,
+									lineStyle: {
+										color: '#D3D3D3', 
+										//width: 2,    
+										type: 'dotted',    
+									},
+								},
+
+							axisLabel: {  
+								show: true,  
+								 color: function (val) {
+									val = Number(val).toFixed(2);
+									if (val == preClose) {
+									  return '#fff'
+									}
+									return val > preClose ? '#FF8C00' : '#7FFFAA';
+								  },
+								formatter: function (value){
+									return keepTwoDecimal(value)
+								}
+							}
+						},
+						{
+							type: 'value',
+							gridIndex: 1,
+							position:'right',
+							offset: 10,     
+							scale: true,   
+							splitArea: {     
+								show: false
+							},
+							min: min(),
+							max: max(),
+							interval: _interval,
+							splitLine:{ 
+								show:true,
+								lineStyle: {
+									color: '#cccccc',
+									width: 0.2,
+									type: 'dashed', 
+								}
+							},
+							axisLine: { 
+								show: true,
+								lineStyle: {
+									color: '#D3D3D3', 
+									//width: 2,    
+									type: 'dotted',     
+								},
+							},
+							axisLabel: {  
+								show: true,  
+								color: function (val) {
+								val = Number(val).toFixed(2);
+									if (val == preClose) {
+										return '#fff'
+									}
+									return val > preClose ? '#FF8C00' : '#7FFFAA';
+								},
+								formatter: function (value) {
+									var resul = ratioCalculate(value, preClose);
+									return Number(resul).toFixed(2) + '%'
+								}
+							}
+						},
+						{
+							gridIndex: 2,
+							position:'right',
+							offset: 10,
+							scale: true,
+							splitNumber: 2,
+							splitLine:{ 
+								show:true,
+								lineStyle: {
+									color: '#cccccc',
+									width: 0.2,
+									type: 'dashed',
+								}
+							},
+							axisLine: { 
+								show: true,
+								lineStyle: {
+									color: '#D3D3D3', 
+									//width: 2,   
+									type: 'dotted',   
+								},
+							},
+							axisLabel: {  
+								show: true,
+								formatter: function (value){
+									if(value != 0){
+										return NumberTransform(value)
+									}else{
+										return 0
+									}
+								}
+							}
+						}
+					],
+						series: [
+							{
+								name: '分时',
+								type: 'line',
+								gridIndex: 0,
+								xAxisIndex: 0,
+								yAxisIndex: 0,
+								data: getParamValues("close", arr),
+								itemStyle: {
+									normal: {
+										lineStyle: {
+											width: 1.2,
+											color: "#FFFFFF"
+										},
+										color: '#FFFFFF',
+									}
+								},
+								markLine:{  
+									name:'昨日收盘价',
+									symbol: ['none', 'none'],
+									label:{
+										show:false,
+										formatter:  preClose,
+										position: 'start',
+									},
+									lineStyle: {
+										color: '#4289c5',
+										type: 'solid'
+									},
+									data: [{
+										yAxis: preClose
+									}]
+								},
+								markPoint: {
+									symbol: 'arrow',
+									symbolSize: 15, 
+									symbolRotate: function(value) {
+										return value.itemStyle && value.itemStyle.color === '#00FF00' ? 180 : 0;
+									},
+									itemStyle: {
+										color: function(params) {
+											return params.data.itemStyle ? params.data.itemStyle.color : '#FF0000';
+										}
+									},
+									label: {
+										show: false
+									},
+									data: rollingHighLow.highBreakPoints.concat(rollingHighLow.lowBreakPoints)
+								}
+							},
+							{
+								name: '分时均价',
+								type: 'line',
+								gridIndex: 0,
+								xAxisIndex: 0,
+								yAxisIndex: 0,
+								data: getParamValues("jprice", arr),
+								itemStyle: {
+									normal: {
+										lineStyle: {
+											width: 1.2,
+											color: "#EBEB00"
+										},
+										color: '#EBEB00',
+									}
+								}
+							},
+							{
+								name: 'MA250',
+								type: 'line',
+								gridIndex: 0,
+								xAxisIndex: 0,
+								yAxisIndex: 0,
+								data: ma250Data,
+								smooth: true,
+								itemStyle: {
+									normal: {
+										lineStyle: {
+											width: 1.2,
+											color: "#FF0000"
+										},
+										color: '#FF0000',
+									}
+								}
+							},
+							{							
+								name: '分时涨幅',
+								type: 'line',
+								gridIndex: 1,
+								xAxisIndex: 1,
+								yAxisIndex: 1,
+								data: getParamValues("close", arr),
+								smooth: true,
+								symbol: "none",
+								lineStyle: { 
+									normal: {
+										width: 0
+									}
+								},
+								markLine:{ 
+									name:'竞价',
+									symbol: ['none', 'none'],
+									label:{
+										show:false,
+										position: 'start',
+									},
+									lineStyle: {
+										color: '#fff',
+										type: 'solid'
+									},
+									data: selectedDays > 1 ? markLines : [{
+										xAxis: jm
+									}]
+								}
+							},
+							{
+								name: '成交量',
+								type: 'bar',
+								gridIndex: 2,
+								xAxisIndex: 2,
+								yAxisIndex: 2,
+								data: getParamValues("vol", arr),
+								barWidth: selectedDays > 1 ? 1 : 2,  
+								itemStyle: {
+									color: function(params) {
+										const index = params.dataIndex;
+										const currentPrice = arr[index]?.close;
+										const prevPrice = index > 0 ? arr[index-1]?.close : null;
+										if (index === 0 || prevPrice === null) {
+											return currentPrice >= preClose ? '#FF4500' : '#32CD32';
+										}
+										return currentPrice >= prevPrice ? '#FF4500' : '#32CD32'; 
+									}
+								},
+								markLine: selectedDays > 1 ? {
+									silent: true,
+									symbol: 'none',
+									lineStyle: {
+										color: '#333333', 
+										width: 0.01, 
+										type: 'dashed'
+									},
+									data: window.dateBoundaries.map(b => [{
+										coord: [b.index, 0]
+									}, {
+										coord: [b.index, 0] 
+									}])
+								} : null
+							},
+							{
+								name: '前高点',
+								type: 'line',
+								gridIndex: 0,
+								xAxisIndex: 0,
+								yAxisIndex: 0,
+								data: [],
+								markLine: {
+									symbol: ['none', 'none'],
+									label: {
+										show: false
+									},
+									lineStyle: {
+										color: '#FF3333', 
+										width: 1, 
+										type: 'dashed'
+									},
+									data: createMarkLinesFromPoints(rollingHighLow.highPoints)
+								}
+							},
+							{
+								name: '前低点',
+								type: 'line',
+								gridIndex: 0,
+								xAxisIndex: 0,
+								yAxisIndex: 0,
+								data: [],
+								markLine: {
+									symbol: ['none', 'none'],
+									label: {
+										show: false
+									},
+									lineStyle: {
+										color: '#33FF33', 
+										width: 1, 
+										type: 'dashed'
+									},
+									data: createMarkLinesFromPoints(rollingHighLow.lowPoints)
+								}
+							},
+							{
+								name: '涨停标记',
+								type: 'custom',
+								show: gpdm === "999999",
+								renderItem: function (params, api) {
+									try {
+										const index = api.value(0);
+										if (!arr[index]) return null;
+
+										const timeKey = arr[index].time;
+										if (!timeKey) return null;
+
+										const formattedTimeKey = timeKey.padStart(5, '0');
+										const stocks = timeGroup[formattedTimeKey] || [];
+										if (formattedTimeKey === "09:30") {
+											const earlyStocks = [];
+											Object.keys(earlyTimeGroup).forEach(earlyKey => {
+												earlyTimeGroup[earlyKey].forEach(stock => {
+													earlyStocks.push(stock);
+												});
+											});
+											
+											earlyStocks.sort((a, b) => {
+												if (b.boardCount !== a.boardCount) {
+													return b.boardCount - a.boardCount;
+												}
+												return a.time - b.time;
+											});
+											
+											if (earlyStocks.length > 0) {
+												const point930 = api.coord([index, arr[index].close]);
+												if (!point930) return null;
+												const children = [];
+												if (earlyStocks.length > 0) {
+													children.push({
+														type: 'text',
+														style: {
+															text: "竞价涨停:",
+															font: '13px Microsoft YaHei',
+															fill: '#FFFFFF',
+															textAlign: 'left',
+															textVerticalAlign: 'top',
+															x: point930[0],
+															y: 15, 
+															backgroundColor: 'rgba(0,0,0,0.3)',
+															padding: [2, 4, 2, 4]
+														}
+													});
+
+													earlyStocks.forEach((stock, idx) => {
+														let fillColor;
+														if (stock.boardCount >= 4) {
+															fillColor = '#FF00FF'; 
+														} else if (stock.boardCount === 3) {
+															fillColor = '#FF0000'; 
+														} else if (stock.boardCount === 2) {
+															fillColor = '#FF7F7F'; 
+														} else {
+															fillColor = '#FFA500'; 
+														}
+														
+														const stockText = `${numToChinese(stock.boardCount)}板 ${stock.name} ${stock.timeStr.slice(0,5)} ${stock.reason || ''}`;
+														
+														children.push({
+															type: 'text',
+															style: {
+																text: stockText,
+																font: '13px Microsoft YaHei',
+																fill: fillColor,
+																textAlign: 'left',
+																textVerticalAlign: 'top',
+																x: point930[0],
+																y: 45 + idx * 25, 
+																backgroundColor: 'rgba(0,0,0,0.3)',
+																padding: [2, 4, 2, 4]
+															}
+														});
+													});
+												}
+												if (stocks.length > 0) {
+													const titleYPos = earlyStocks.length > 0 ? 60 + earlyStocks.length * 25 : 15;
+													children.push({
+														type: 'text',
+														style: {
+															text: "开盘涨停:",
+															font: '13px Microsoft YaHei',
+															fill: '#FFFFFF',
+															textAlign: 'left',
+															textVerticalAlign: 'top',
+															x: point930[0],
+															y: titleYPos,
+															backgroundColor: 'rgba(0,0,0,0.3)',
+															padding: [2, 4, 2, 4]
+														}
+													});
+													stocks.forEach((stock, idx) => {
+														let fillColor;
+														if (stock.boardCount >= 4) {
+															fillColor = '#FF00FF'; 
+														} else if (stock.boardCount === 3) {
+															fillColor = '#FF0000'; 
+														} else if (stock.boardCount === 2) {
+															fillColor = '#FF7F7F';
+														} else {
+															fillColor = '#FFA500'; 
+														}
+														
+														const stockText = `${numToChinese(stock.boardCount)}板 ${stock.name} ${formattedTimeKey} ${stock.reason || ''}`;
+														
+														children.push({
+															type: 'text',
+															style: {
+																text: stockText,
+																font: '13px Microsoft YaHei',
+																fill: fillColor,
+																textAlign: 'left',
+																textVerticalAlign: 'top',
+																x: point930[0],
+																y: titleYPos + 30 + idx * 25, 
+																backgroundColor: 'rgba(0,0,0,0.3)',
+																padding: [2, 4, 2, 4]
+															}
+														});
+													});
+												}
+												
+												return {
+													type: 'group',
+													children: children
+												};
+											}
+										}
+										let timeValue = Number(timeKey.replace(':', ''));
+										if (timeValue >= 925 && timeValue < 930) {
+											const thisTimeStocks = earlyTimeGroup[formattedTimeKey] || [];
+											if (thisTimeStocks.length === 0) return null;
+											const currentPoint = api.coord([index, arr[index].close]);
+											if (!currentPoint) return null;
+											const startPoint = currentPoint;
+											const chartHeight = api.getHeight();
+											const extensionPixels = 60; 
+											const extensionPercent = extensionPixels / chartHeight;
+											const priceRange = max() - min();
+											const priceExtension = priceRange * extensionPercent * (-1); 
+											const endPoint = api.coord([index, arr[index].close + priceExtension]);
+											if (!endPoint) return null;
+											return {
+												type: 'group',
+												children: [
+													{
+														type: 'line',
+														shape: {
+															x1: startPoint[0],
+															y1: startPoint[1],
+															x2: endPoint[0],
+															y2: endPoint[1]
+														},
+														style: {
+															stroke: '#ffffff',
+															lineWidth: 0.5,
+															lineDash: [2, 3]
+														}
+													},
+													...thisTimeStocks.map((stock, idx) => {
+														let fillColor;
+														if (stock.boardCount >= 4) {
+															fillColor = '#FF00FF'; 
+														} else if (stock.boardCount === 3) {
+															fillColor = '#FF0000'; 
+														} else if (stock.boardCount === 2) {
+															fillColor = '#FF7F7F';
+														} else {
+															fillColor = '#FFA500'; 
+														}
+														
+														const stockText = `${numToChinese(stock.boardCount)}板 ${stock.name} ${formattedTimeKey} ${stock.reason || ''}`;
+														
+														return {
+															type: 'text',
+															style: {
+																text: stockText,
+																font: '13px Microsoft YaHei',
+																fill: fillColor,
+																textAlign: 'center',
+																textVerticalAlign: 'top',
+																x: endPoint[0],
+																y: endPoint[1] + 5 + idx * 25,
+																backgroundColor: 'rgba(0,0,0,0.3)',
+																padding: [2, 4, 2, 4]
+															}
+														};
+													})
+												]
+											};
+										}
+										if (stocks.length === 0) return null;
+										let direction, extensionPixels;
+										let basePixels = 40; 
+										let prevCount = 0;
+										if (timeValue < 1000) {
+											direction = -1;
+											const timeMinutes = Math.floor(timeValue / 100) * 60 + timeValue % 100;
+											const startMinutes = 9 * 60 + 31; 
+											const timeDiff = Math.max(0, timeMinutes - startMinutes);
+											basePixels = 40;
+											
+
+											const allTimes = [];
+											for (let i = 0; i < arr.length; i++) {
+												if (arr[i] && timeGroup[arr[i].time.padStart(5, '0')]) {
+													const iHour = Number(arr[i].time.slice(0, 2));
+													const iMinute = Number(arr[i].time.slice(-2));
+													if (iHour < 10) { 
+														allTimes.push({
+															time: arr[i].time.padStart(5, '0'),
+															minutes: iHour * 60 + iMinute
+														});
+													}
+												}
+											}
+											allTimes.sort((a, b) => a.minutes - b.minutes);
+											const uniqueTimes = [];
+											for (let i = 0; i < allTimes.length; i++) {
+												if (i === 0 || allTimes[i].time !== allTimes[i-1].time) {
+													uniqueTimes.push(allTimes[i]);
+												}
+											}
+											
+
+											let currentPosition = 0;
+											for (let i = 0; i < uniqueTimes.length; i++) {
+												if (uniqueTimes[i].time === timeKey) {
+													currentPosition = i + 1;
+													break;
+												}
+											}
+											
+											let sameMinCount = 0;
+											for (let i = 0; i < arr.length; i++) {
+												if (arr[i] && timeGroup[arr[i].time.padStart(5, '0')]) {
+													const iTimeKey = arr[i].time.padStart(5, '0');
+													if (iTimeKey === timeKey) {
+														sameMinCount++;
+													}
+												}
+											}
+											
+											extensionPixels = basePixels + (currentPosition * 55); 
+											if (sameMinCount > 1) {
+												extensionPixels += (sameMinCount - 1) * 15; 
+											}
+											
+											extensionPixels = Math.min(extensionPixels, 1000);
+											
+											console.log(`10点前 - 时间点: ${timeKey}, 位置: ${currentPosition}, 最终像素: ${extensionPixels}`);
+										} else {
+											const minute = Number(timeKey.slice(-2));
+											const hour = Number(timeKey.slice(0, 2));
+											const timeMinutes = hour * 60 + minute;
+											const startMinutes = 10 * 60; 
+											const timeDiff = Math.max(0, timeMinutes - startMinutes);
+											const cycleIndex = Math.floor(timeDiff / 15); 
+											direction = (cycleIndex % 2 === 0) ? 1 : -1;
+											basePixels = 120;
+											let currentCycleStocks = 0; 
+											let currentStockIndex = 0; 
+											const cycleStartMinutes = startMinutes + (cycleIndex * 15);
+											const cycleEndMinutes = cycleStartMinutes + 14;
+											for (let i = 0; i < arr.length; i++) {
+												if (arr[i] && timeGroup[arr[i].time.padStart(5, '0')]) {
+													const iHour = Number(arr[i].time.slice(0, 2));
+													const iMinute = Number(arr[i].time.slice(-2));
+													const iTotalMinutes = iHour * 60 + iMinute;
+													if (iTotalMinutes >= cycleStartMinutes && iTotalMinutes <= cycleEndMinutes) {
+														currentCycleStocks++;
+														if (iTotalMinutes <= timeMinutes) {
+															currentStockIndex++;
+														}
+													}
+												}
+											}
+											if (currentStockIndex > 1) {
+												extensionPixels = basePixels + ((currentStockIndex - 1) * 50); 
+											} else {
+												extensionPixels = basePixels; 
+											}
+											extensionPixels = Math.min(extensionPixels, 500);
+											let sameMinCount = 0;
+											for (let i = 0; i < arr.length; i++) {
+												if (arr[i] && timeGroup[arr[i].time.padStart(5, '0')]) {
+													const iTimeKey = arr[i].time.padStart(5, '0');
+													if (iTimeKey === timeKey) {
+														sameMinCount++;
+													}
+												}
+											}
+											if (sameMinCount > 1) {
+												extensionPixels += (sameMinCount - 1) * 25; 
+											}
+											console.log(`时间点: ${timeKey}, 周期: ${cycleIndex}, 序号: ${currentStockIndex}, 最终像素: ${extensionPixels}`);
+										}
+										const currentPoint = api.coord([index, arr[index].close]);
+										if (!currentPoint) return null;
+										const startPoint = currentPoint; 
+										if (!startPoint) return null;
+										const chartHeight = api.getHeight();
+										const extensionPercent = extensionPixels / chartHeight;
+										const priceRange = max() - min();
+										const priceExtension = priceRange * extensionPercent * direction;
+										const endPoint = api.coord([index, arr[index].close + priceExtension]);
+										if (!endPoint) return null;
+										return {
+											type: 'group',
+											children: [
+												{
+													type: 'line',
+													shape: {
+														x1: startPoint[0],
+														y1: startPoint[1],
+														x2: endPoint[0],
+														y2: endPoint[1]
+													},
+													style: {
+														stroke: '#ffffff',
+														lineWidth: 0.5, 
+														lineDash: [2, 3] 
+													}
+												},
+												...stocks.map((stock, idx) => {
+													const timeDisplay = stock.timeStr 
+														? stock.timeStr.slice(0, 5)  
+														: (formattedTimeKey.length === 5 
+															? formattedTimeKey 
+															: formattedTimeKey); 
+													let fillColor;
+													if (stock.boardCount >= 4) {
+														fillColor = '#FF00FF'; 
+													} else if (stock.boardCount === 3) {
+														fillColor = '#FF0000'; 
+													} else if (stock.boardCount === 2) {
+														fillColor = '#FF7F7F'; 
+													} else {
+														fillColor = '#FFA500'; 
+													}
+													const stockText = `${numToChinese(stock.boardCount)}板 ${stock.name} ${timeDisplay} ${stock.reason || ''}`;
+													const yOffset = idx * 20; 
+													
+													return {
+														type: 'text',
+														style: {
+															text: stockText,
+															font: '13px Microsoft YaHei',
+															fill: fillColor,
+															textAlign: direction > 0 ? 'left' : 'center', 
+															textVerticalAlign: direction > 0 ? 'bottom' : 'top',
+															x: direction > 0 ? endPoint[0] + 5 : endPoint[0],
+															y: direction > 0 ? endPoint[1] + yOffset : endPoint[1] - yOffset,
+															backgroundColor: 'rgba(0,0,0,0.5)', 
+															padding: [3, 5, 3, 5] 
+														}
+													};
+												})
+											]
+										};
+									} catch (e) {
+										console.error('渲染涨停标记错误:', e);
+										return null;
+									}
+								},
+								data: function() {
+									let lines = [];
+									let isUp = true;
+									let earlyStocks = []; 
+									let otherStocks = []; 
+
+									try {
+										const index930 = arr.findIndex(item => item.time === '09:30');
+										if (index930 >= 0) {
+											let hasEarlyStocks = false;
+											let hasOpenStocks = false;
+											
+
+											Object.keys(earlyTimeGroup).forEach(timeKey => {
+												if (earlyTimeGroup[timeKey].length > 0) {
+													hasEarlyStocks = true;
+												}
+											});
+											
+
+											if (timeGroup['09:30'] && timeGroup['09:30'].length > 0) {
+												hasOpenStocks = true;
+											}
+											
+
+											if (hasEarlyStocks || hasOpenStocks) {
+												lines.push([index930, arr[index930].close, 1, true, 0]);
+											}
+										}
+										Object.entries(timeGroup).forEach(([timeKey, stocks]) => {
+											if (!stocks || stocks.length === 0 || timeKey === '09:30') return;
+											const index = arr.findIndex(item => item.time === timeKey);
+											if (index === -1) {
+												console.warn('未找到时间点:', timeKey);
+												return;
+											}
+											const timeValue = Number(timeKey.replace(':', ''));
+											if (timeValue >= 931) {
+												lines.push([index, arr[index].close, isUp ? 1 : -1, false, 0]);
+												isUp = !isUp;
+											}
+										});
+
+										console.log('涨停标记数据:', lines.length);
+										return lines;
+									} catch (e) {
+										console.error('生成涨停标记数据错误:', e);
+										return [];
+									}
+								}(),
+								z: 10,
+								gridIndex: 0,
+								xAxisIndex: 0,
+								yAxisIndex: 0
+							},
+							{
+								type:'scatter',
+								data: getScatterSourceData(arr),
+								symbolSize:function (arg, opt){
+									if (arg === 0) return 0;
+									const timePoint = opt.name;
+									const dataIndex = opt.dataIndex;
+									let scatterPoint;
+									if (selectedDays > 1 && arr[dataIndex]) {
+										const targetDate = arr[dataIndex].date;
+										const targetTime = timePoint;
+										scatterPoint = scatterData.find(v => v.realTime === targetTime);
+									} else {
+										scatterPoint = scatterData.find(v => v.realTime === timePoint);
+									}
+									
+									if (!scatterPoint) return 0;
+									
+									const realValue = scatterPoint.realVolumn;
+									val = Math.abs(realValue);
+									const info = Math.floor(val / 1000);
+									const temp = selectedDays > 1 ? 8 : 12; 
+									let circle = (temp + ((info - 1) * 0.1 + ((val - info * 1000) / 1000 * 0.1)) * temp).toFixed(2);
+									if (circle > 60) circle = 60;
+									return circle;
+								},
+								itemStyle:{
+									color:function (arg){
+										const timePoint = arg.name;
+										const dataIndex = arg.dataIndex;
+										let temp;
+										if (selectedDays > 1 && arr[dataIndex]) {
+											// 多日模式
+											const targetDate = arr[dataIndex].date;
+											const targetTime = timePoint;
+											
+											// 找到当天的对应时间点数据
+											temp = scatterData.find(v => v.realTime === targetTime);
+										} else {
+											// 单日模式
+											temp = scatterData.find(v => v.realTime === timePoint);
+										}
+										
+										let color = 'red';
+										if (temp && temp.realVolumn < 0) {
+											color = 'green';
+										}
+										return color;
+									}
+								}
+							}
+						]
+					}
+					myChart.setOption(option);
+					$(window).resize(myChart.resize); 
+				});
+			}
+			function fetchMarketInfo() {
+				console.log("执行fetchMarketInfo函数，当前股票代码:", gpdm);
+				$('#marketInfoContainer').css({
+					'display': 'block',
+					'position': 'absolute',
+					'top': '15px',
+					'right': '145px',
+					'width': 'auto',
+					'max-width': '70%', 
+					'text-align': 'left',
+					'background-color': 'transparent',
+					'padding': '0 10px', 
+					'z-index': '1000',
+					'border': 'none',
+					'border-radius': '0',
+					'box-shadow': 'none',
+					'color': '#eee',
+					'height': 'auto'
+				});
+				
+				$('#marketInfoPanel').css({
+					'display': 'block',
+					'font-size': '12px',
+					'line-height': '16px'
+				});
+				$('#marketInfoPanel').html('市场数据加载中...');
+				var res1 = "";  
+				var res2 = "";  
+				
+
+				var url1 = "https://apphq.longhuvip.com/w1/api/index.php?a=DiskReview&apiv=w30&c=HomeDingPan";
+				var url2 = "https://apphq.longhuvip.com/w1/api/index.php?a=ZhangFuDetail&apiv=w21&c=HomeDingPan";
+				
+				$.ajax({
+					type: "get",
+					url: url1,
+					dataType: "text",  
+					async: false,     
+					cache: false,
+					timeout: 3000,
+					success: function(data) {
+						console.log("获取盘面点评数据成功");
+						res1 = data;
+					},
+					error: function(xhr, status, error) {
+						console.error('获取盘面点评数据失败:', error);
+					}
+				});
+				$.ajax({
+					type: "get",
+					url: url2,
+					dataType: "text", 
+					async: false,     
+					cache: false,
+					timeout: 3000,
+					success: function(data) {
+						console.log("获取涨跌统计数据成功");
+						res2 = data;
+					},
+					error: function(xhr, status, error) {
+						console.error('获取涨跌统计数据失败:', error);
+					}
+				});
+				if(res1 && res2) {
+					try {
+						var data1 = JSON.parse(res1);
+						var data2 = JSON.parse(res2);
+						var marketStrength = data1.info.strong || "50"; 
+						var marketComment = data1.info.sign || ""; 
+						var tradeDate = data2.date ? data2.date.substring(5) : formatCurrentDate();
+						tradeDate = tradeDate.replace("-", "月") + "日";
+						var upCount = data2.info.SZJS || 0;    
+						var downCount = data2.info.XDJS || 0; 
+						var flatCount = Number(data2.info['0'] || 0); 
+						
+
+						var limitUpCount = data2.info.SJZT || 0;   
+						var limitDownCount = data2.info.SJDT || 0;  
+						
+						var ratio = downCount > 0 ? (upCount / downCount).toFixed(2) : upCount.toFixed(2);
+						var totalAmount = data2.info.qscln ? (data2.info.qscln / 10000).toFixed(0) : 0;  
+						var strengthValue = parseInt(marketStrength);
+						var strengthColor = '#FFFFFF';
+						if (strengthValue > 70) {
+							strengthColor = '#FF4500'; 
+						} else if (strengthValue > 50) {
+							strengthColor = '#FFA500'; 
+						} else if (strengthValue < 30) {
+							strengthColor = '#32CD32'; 
+						} else if (strengthValue < 50) {
+							strengthColor = '#CCCCCC'; 
+						}
+						
+						var marketInfoHtml = `
+							<div style="text-align:left; margin-bottom:4px;">
+								<span style="color:#FFFFFF; display:inline-block; width:80px;">${tradeDate}</span> 
+								成交<span style="color:#FF4500;">${totalAmount}</span>亿 
+								涨<span style="color:#FF4500;">${upCount}</span> 
+								跌<span style="color:#32CD32;">${downCount}</span> 
+								平<span style="color:#CCCCCC;">${flatCount}</span> 
+								涨停<span style="color:#FF4500;">${limitUpCount}</span> 
+								跌停<span style="color:#32CD32;">${limitDownCount}</span> 
+								比<span style="color:#FF4500;">${ratio}%</span> 
+								强度<span style="color:${strengthColor};">${strengthValue}</span>
+								点评<span style="color:#FF0;">${marketComment}</span>
+							</div>`;
+						$('#marketInfoPanel').html(marketInfoHtml);
+						
+					} catch(e) {
+						console.error('处理市场数据出现异常:', e);
+						$('#marketInfoPanel').html(`<span style="color:#FF6347;">处理市场数据异常，请稍后刷新</span>`);
+					}
+				} else {
+					$('#marketInfoPanel').html(`<span style="color:#FF6347;">获取市场数据失败，请稍后刷新</span>`);
+				}
+				function formatCurrentDate() {
+					var now = new Date();
+					var month = (now.getMonth() + 1).toString().padStart(2, '0');
+					var day = now.getDate().toString().padStart(2, '0');
+					return month + '-' + day;
+				}
+			}
+		</script>
+		<script>
+			fetchMarketInfo();
+			setInterval(function() {
+				console.log("定时刷新市场行情数据");
+				fetchMarketInfo();
+			}, 30000); 
+		</script>
+	</body>
+</html>
+

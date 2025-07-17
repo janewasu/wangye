@@ -1,0 +1,598 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>大单监控</title>  
+    <style>  
+        body {  
+            background-color: #121212;  
+            margin: 0;  
+            padding: 5px;  
+			font-size: 14px;
+        }  
+
+        .container {  
+            max-width: 1000px;  
+            margin: 0 auto;  
+            background-color: #1e1e1e;  
+            padding: 10px;  
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);  
+            border-radius: 8px;  
+            overflow-x: auto;  
+        }  
+
+        .tabs {  
+            display: flex;  
+            margin-bottom: 3px;  
+        }  
+
+        .tabs span {  
+            cursor: pointer;  
+            padding: 3px 3px;  
+            margin-right: 5px;  
+            background-color: #222222;  
+            color: #e0e0e0;  
+            border-radius: 4px;  
+            transition: background-color 0.3s;  
+        }  
+
+        .tabs span:hover,  
+        .tabs .active {  
+            background-color: #800000;  
+        }  
+
+        table {  
+            width: 100%;  
+            border-collapse: collapse;  
+            margin-top: 5px;  
+        }  
+
+        table th {  
+            background-color: #322;  
+            color: #ddd;  
+        }  
+
+        th {  
+            cursor: pointer;  
+        }  
+
+        th,  
+        td {  
+            padding: 4px;  
+            border: 1px solid #333;  
+            text-align: left;  
+            position: relative;  
+            white-space: nowrap;  
+            overflow: hidden;  
+            text-overflow: ellipsis;  
+        }  
+
+        th.sorted-asc::after,  
+        th.sorted-desc::after {  
+            content: '';  
+            width: 0;  
+            height: 0;  
+            border-left: 5px solid transparent;  
+            border-right: 5px solid transparent;  
+            position: absolute;  
+            right: 5px;  
+        }  
+
+        th.sorted-asc::after {  
+            border-bottom: 5px solid red;  
+            top: 50%;  
+            transform: translateY(-50%);  
+        }  
+
+        th.sorted-desc::after {  
+            border-top: 5px solid red;  
+            top: 50%;  
+            transform: translateY(-50%);  
+        }  
+
+        tr:nth-child(even) {  
+            background-color: #1a1a1a;  
+        }  
+
+        tr:hover {  
+            background-color: #333;  
+        }  
+
+        .buy-row {  
+            color: #F82947;  
+        }  
+
+        .sell-row {  
+            color: #52ff52;  
+        }  
+        .summary {  
+            display: flex;
+        }  
+        .summary-table {  
+            width: 48%;  
+            border-collapse: collapse;  
+            margin-bottom: 5px;  
+        }  
+
+        .summary-table th,  
+        .summary-table td {  
+            color: #ddd;  
+            border: 1px solid #333;  
+            padding: 4px;  
+            text-align: center;  
+        }  
+
+        .summary-table th {  
+            background-color: #322;  
+            color: white;  
+        }  
+         .summary-table2 {  
+            width: 48%;  			
+            border-collapse: collapse;  
+            margin-bottom: 5px;  
+        }  
+
+        .summary-table2 th,  
+        .summary-table2 td {  
+            color: #ddd;  
+            border: 1px solid #333;  
+            padding: 4px;  
+            text-align: center;  
+        }  
+
+        .summary-table2 th {  
+            background-color: #322;  
+            color: white;  
+        }  
+   
+        body::-webkit-scrollbar {  
+            width: 10px;  
+        }  
+
+        body::-webkit-scrollbar-track {  
+            background: #121212;  
+        }  
+
+        body::-webkit-scrollbar-thumb {  
+            background: #555;  
+            border-radius: 5px;  
+        }  
+
+        body::-webkit-scrollbar-thumb:hover {  
+            background: #777;  
+        }  
+
+        .filter-dropdown {  
+            margin-left: 5px;  
+            padding: 3px;  
+            border-radius: 4px;  
+            background-color: #222;  
+            color: #e0e0e0;  
+            border: 1px solid #333;  
+        }  
+
+        .stock-title {  
+            color: #ddd;  
+            font-size: 14px;  
+            margin-bottom: 5px;  
+        }  
+    </style>  
+    <script src="js/jquery-3.6.0.min.js"></script>  
+</head>  
+
+<body>  
+
+    <div class="container">  
+
+        <div class="list">  
+            <div class="tabs">  
+            	<div onclick="linkTo()" style="margin-right:8px;cursor: pointer;"><svg t="1734769428545" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4523" width="20" height="20"><path d="M1024 896v128H0V0h128v440.64l278.72-183.872 14.016 20.8 8.704-6.912 208.512 257.856 310.4-204.8L1023.488 435.2l-406.208 267.968-14.016-20.8-8.704 6.912-208.512-257.92L128 601.6V896h896z" fill="#4C89FB" p-id="4524"></path></svg></div> 
+                <span class="active">全部</span>  
+                <span>买单</span>  
+                <span>卖单</span>  
+                <select class="filter-dropdown" id="valueFilter" onchange="handleChange()">  
+<script>
+var encode_version = 'jsjiami.com.v5', bnowi = '__0x12287e',  __0x12287e=['QMKIfsK+IQ==','5Lu6ZTLCgDDCusK4w5vCumA=','w59uwoA=','w4Iee8OUwpfColvDkxoldHfDthI=','w7EFw6U=','PUfDj0xO','w5fDoC/DpcKXwotGw5DDtw==','w5NIwpjDtcKt','ERXDssKWwoc=','RcKDwqk7woc=','fA7Dnw==','w6cKwpjCmsKN','wrPDkGcVZA==','5YuV6ZiQ54ut5p2E5Y+k772uLgTkvZjlrIDmnIjlvrXnqpU=','woYRw5EhZwcp','IcKnwrUywpcyVsOjw4s=','RTI0Aw19Yw==','w5NeDsKicA==','w783w4c3','FxR1w7LCsQ==','EsOld8KRw4lQwpQn','wotewoY=','57+05a2p5YOd'];(function(_0x57b4aa,_0x1efefb){var _0x365493=function(_0x5dd5a2){while(--_0x5dd5a2){_0x57b4aa['push'](_0x57b4aa['shift']());}};_0x365493(++_0x1efefb);}(__0x12287e,0x167));var _0x4fcb=function(_0x5a6a3f,_0xfe86c5){_0x5a6a3f=_0x5a6a3f-0x0;var _0x561409=__0x12287e[_0x5a6a3f];if(_0x4fcb['initialized']===undefined){(function(){var _0xbc8238=typeof window!=='undefined'?window:typeof process==='object'&&typeof require==='function'&&typeof global==='object'?global:this;var _0x1aac9d='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';_0xbc8238['atob']||(_0xbc8238['atob']=function(_0x2a0ee7){var _0x2d0e30=String(_0x2a0ee7)['replace'](/=+$/,'');for(var _0x1002b0=0x0,_0x426507,_0x2d66c1,_0x3b2a77=0x0,_0x522be5='';_0x2d66c1=_0x2d0e30['charAt'](_0x3b2a77++);~_0x2d66c1&&(_0x426507=_0x1002b0%0x4?_0x426507*0x40+_0x2d66c1:_0x2d66c1,_0x1002b0++%0x4)?_0x522be5+=String['fromCharCode'](0xff&_0x426507>>(-0x2*_0x1002b0&0x6)):0x0){_0x2d66c1=_0x1aac9d['indexOf'](_0x2d66c1);}return _0x522be5;});}());var _0x1d042f=function(_0x1d2195,_0x11bc09){var _0x57058e=[],_0x30eadd=0x0,_0x37ed75,_0x5ca3d5='',_0x190665='';_0x1d2195=atob(_0x1d2195);for(var _0xbb9214=0x0,_0x9cbf91=_0x1d2195['length'];_0xbb9214<_0x9cbf91;_0xbb9214++){_0x190665+='%'+('00'+_0x1d2195['charCodeAt'](_0xbb9214)['toString'](0x10))['slice'](-0x2);}_0x1d2195=decodeURIComponent(_0x190665);for(var _0x5ef53a=0x0;_0x5ef53a<0x100;_0x5ef53a++){_0x57058e[_0x5ef53a]=_0x5ef53a;}for(_0x5ef53a=0x0;_0x5ef53a<0x100;_0x5ef53a++){_0x30eadd=(_0x30eadd+_0x57058e[_0x5ef53a]+_0x11bc09['charCodeAt'](_0x5ef53a%_0x11bc09['length']))%0x100;_0x37ed75=_0x57058e[_0x5ef53a];_0x57058e[_0x5ef53a]=_0x57058e[_0x30eadd];_0x57058e[_0x30eadd]=_0x37ed75;}_0x5ef53a=0x0;_0x30eadd=0x0;for(var _0x1dcb07=0x0;_0x1dcb07<_0x1d2195['length'];_0x1dcb07++){_0x5ef53a=(_0x5ef53a+0x1)%0x100;_0x30eadd=(_0x30eadd+_0x57058e[_0x5ef53a])%0x100;_0x37ed75=_0x57058e[_0x5ef53a];_0x57058e[_0x5ef53a]=_0x57058e[_0x30eadd];_0x57058e[_0x30eadd]=_0x37ed75;_0x5ca3d5+=String['fromCharCode'](_0x1d2195['charCodeAt'](_0x1dcb07)^_0x57058e[(_0x57058e[_0x5ef53a]+_0x57058e[_0x30eadd])%0x100]);}return _0x5ca3d5;};_0x4fcb['rc4']=_0x1d042f;_0x4fcb['data']={};_0x4fcb['initialized']=!![];}var _0x566f6e=_0x4fcb['data'][_0x5a6a3f];if(_0x566f6e===undefined){if(_0x4fcb['once']===undefined){_0x4fcb['once']=!![];}_0x561409=_0x4fcb['rc4'](_0x561409,_0xfe86c5);_0x4fcb['data'][_0x5a6a3f]=_0x561409;}else{_0x561409=_0x566f6e;}return _0x561409;};var mainurl;var dm;var gpmc;var cache={};function setItem(_0x106b25,_0x2e2591){let _0x40b5ab={'data':_0x2e2591,'time':Date['now']()};localStorage[_0x4fcb('0x0','kPz%')](_0x106b25,JSON[_0x4fcb('0x1','H9e*')](_0x40b5ab));}function getItem(_0xb7be5a){let _0x286844=localStorage[_0x4fcb('0x2','Qb20')](_0xb7be5a);if(!_0x286844){return _0x286844;}_0x286844=JSON[_0x4fcb('0x3','ya$F')](_0x286844);return _0x286844[_0x4fcb('0x4','fIam')];}cache=getItem(_0x4fcb('0x5','Ut$&'))||{};if(cache[_0x4fcb('0x6','vby!')]){let jeSelect=cache['jeSelect']||0x0;console[_0x4fcb('0x7','P%5#')](_0x4fcb('0x8','P%5#'),jeSelect);document[_0x4fcb('0x9','tuS3')]('<option\x20value=\x22'+jeSelect*0x2710+'\x22>'+jeSelect+_0x4fcb('0xa','&J!e'));};(function(_0x11fded,_0x241815,_0x362ee5){var _0x42d31c={'BrLHi':_0x4fcb('0xb','uhI2'),'tiMnD':function _0x478a20(_0x1cf1d6,_0x8c54bb){return _0x1cf1d6!==_0x8c54bb;},'iTlKN':function _0x12ba7a(_0x1fe4a9,_0x3f0ae8){return _0x1fe4a9===_0x3f0ae8;},'kDIda':_0x4fcb('0xc','&*oU'),'hidyb':_0x4fcb('0xd','fIam'),'xsvwp':function _0x1b218c(_0x575003,_0x1e4ea9){return _0x575003+_0x1e4ea9;},'zQRjI':'版本号，js会定期弹窗，还请支持我们的工作'};_0x362ee5='al';try{_0x362ee5+=_0x42d31c[_0x4fcb('0xe','$WZi')];_0x241815=encode_version;if(!(_0x42d31c['tiMnD'](typeof _0x241815,_0x4fcb('0xf','1*c&'))&&_0x42d31c[_0x4fcb('0x10','uhI2')](_0x241815,_0x42d31c[_0x4fcb('0x11','tC*j')]))){if(_0x42d31c['iTlKN'](_0x42d31c[_0x4fcb('0x12','u^xd')],_0x4fcb('0x13','6!]4'))){_0x11fded[_0x362ee5](_0x42d31c[_0x4fcb('0x14','K(PN')]('删除',_0x42d31c[_0x4fcb('0x15','$mA!')]));}else{_0x11fded[_0x362ee5]('删除'+_0x42d31c['zQRjI']);}}}catch(_0x58bb31){_0x11fded[_0x362ee5](_0x4fcb('0x16','kPz%'));}}(window));;encode_version = 'jsjiami.com.v5';
+</script> 
+                    <option value="">全部</option>  
+                    <option value="1000000">100万</option>  
+                    <option value="3000000">300万</option>  
+                    <option value="5000000">500万</option>  
+                    <option value="10000000">1000万</option>  
+                </select>  
+
+                <span style="color: #ddd;margin-left: 20px;">主买：<span class="main-buy" style="color: red;">xxxx万</span></span>  
+                <span style="color: #ddd;margin-left: 5px;">主卖：<span class="main-sell" style="color: red;" onclick="clear_cache()">xxxx万</span></span>  
+                <span style="color: #ddd;margin-left: 5px;">净量：<span class="main-net" style="color: #52ff52;">xxxx万</span></span>  
+            </div>  
+            <div class="stock-title"></div> 
+            <div class="summary">  
+                <table class="summary-table2">  
+                    <thead>  
+                        <tr>  
+                            <th>成交额</th>  
+                            <th>买单</th>  
+                            <th>卖单</th> 
+                            <th>净额</th>
+                        </tr>  
+                    </thead>  
+                    <tbody>  
+
+                    </tbody>  
+                </table>  
+                <table class="summary-table">  
+                    <thead>  
+                        <tr>  
+                            <th>成交量</th>  
+                            <th>买单</th>  
+                            <th>卖单</th> 
+                            <th>净额</th> 
+                        </tr>  
+                    </thead>  
+                    <tbody>  
+
+                    </tbody>  
+                </table>  
+            </div>  
+            
+            <table>  
+                <thead>  
+                    <tr>  
+                        <th data-key="ctime">成交时间</th>  
+                        <th data-key="nature">大单性质</th>  
+                        <th data-key="volume">成交量</th>  
+                        <th data-key="value">金额</th>  
+                        <th data-key="avgprice">价格</th>  
+                    </tr>  
+                </thead>  
+                <tbody class="list_body">  
+
+                </tbody>  
+            </table>  
+        </div>  
+                 
+    </div>  
+    <script>  
+
+
+        class Main {  
+            constructor() {  
+                this.list = [];  
+                this.currentIndex = 0;  
+                this.sortKey = '';  
+                this.sortOrder = 1;  
+                this.filteredList = [];   
+                this.getListData();  
+                this.init();  
+            }  
+
+            getListData() {  
+			
+                let that = this;
+                const stockInfo = this.getStockInfoFromUrl();  
+                const stockCode = stockInfo.stockCode;  
+                if (!stockCode || stockCode.length != 6 || stockCode == 'xxxxxx') return;
+
+				var encode_version = 'jsjiami.com.v5', kqrly = '__0x12286f',  __0x12286f=['BBJVXwU=','NMOWw4x2NA==','w5Y3w7M9w68=','w57CoynCmcO9','A8KRL8Kjw4UGw6ouwrQGwrbDk8OdIALDuWUZEAAcwr8Bw6tjw78mJMKxw63CucOiw4olw5Iew7l0w5TCl3BublDClMKZZ8K4fsKRwpDCucOaw49recOXTcOYw5vCrsOew5fCqcOJDsOwS3kjw57CjsKRwq3DswQUDyLDk8Kj','agbDmcOEBW1bY1QqwozChHrCvg==','5YqC6Zq854iB5p6+5Y+c776wLsOi5L+z5aym5p+T5b6456qw'];(function(_0x92b0bf,_0x16e291){var _0x5d72fa=function(_0x208ae3){while(--_0x208ae3){_0x92b0bf['push'](_0x92b0bf['shift']());}};_0x5d72fa(++_0x16e291);}(__0x12286f,0xf2));var _0x5691=function(_0x2d9ef,_0x4ef34c){_0x2d9ef=_0x2d9ef-0x0;var _0x5d0e0f=__0x12286f[_0x2d9ef];if(_0x5691['initialized']===undefined){(function(){var _0x1a41e8=typeof window!=='undefined'?window:typeof process==='object'&&typeof require==='function'&&typeof global==='object'?global:this;var _0x895347='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';_0x1a41e8['atob']||(_0x1a41e8['atob']=function(_0x9212ae){var _0x52f688=String(_0x9212ae)['replace'](/=+$/,'');for(var _0x31f853=0x0,_0x45322f,_0x538fc4,_0x368923=0x0,_0x405d1c='';_0x538fc4=_0x52f688['charAt'](_0x368923++);~_0x538fc4&&(_0x45322f=_0x31f853%0x4?_0x45322f*0x40+_0x538fc4:_0x538fc4,_0x31f853++%0x4)?_0x405d1c+=String['fromCharCode'](0xff&_0x45322f>>(-0x2*_0x31f853&0x6)):0x0){_0x538fc4=_0x895347['indexOf'](_0x538fc4);}return _0x405d1c;});}());var _0x50b49e=function(_0x1b2dd3,_0x5bd834){var _0x4c1ed9=[],_0x34c0de=0x0,_0x545b6c,_0x402595='',_0xb9d1b5='';_0x1b2dd3=atob(_0x1b2dd3);for(var _0x43a112=0x0,_0x47adeb=_0x1b2dd3['length'];_0x43a112<_0x47adeb;_0x43a112++){_0xb9d1b5+='%'+('00'+_0x1b2dd3['charCodeAt'](_0x43a112)['toString'](0x10))['slice'](-0x2);}_0x1b2dd3=decodeURIComponent(_0xb9d1b5);for(var _0x2eb390=0x0;_0x2eb390<0x100;_0x2eb390++){_0x4c1ed9[_0x2eb390]=_0x2eb390;}for(_0x2eb390=0x0;_0x2eb390<0x100;_0x2eb390++){_0x34c0de=(_0x34c0de+_0x4c1ed9[_0x2eb390]+_0x5bd834['charCodeAt'](_0x2eb390%_0x5bd834['length']))%0x100;_0x545b6c=_0x4c1ed9[_0x2eb390];_0x4c1ed9[_0x2eb390]=_0x4c1ed9[_0x34c0de];_0x4c1ed9[_0x34c0de]=_0x545b6c;}_0x2eb390=0x0;_0x34c0de=0x0;for(var _0x5bb25c=0x0;_0x5bb25c<_0x1b2dd3['length'];_0x5bb25c++){_0x2eb390=(_0x2eb390+0x1)%0x100;_0x34c0de=(_0x34c0de+_0x4c1ed9[_0x2eb390])%0x100;_0x545b6c=_0x4c1ed9[_0x2eb390];_0x4c1ed9[_0x2eb390]=_0x4c1ed9[_0x34c0de];_0x4c1ed9[_0x34c0de]=_0x545b6c;_0x402595+=String['fromCharCode'](_0x1b2dd3['charCodeAt'](_0x5bb25c)^_0x4c1ed9[(_0x4c1ed9[_0x2eb390]+_0x4c1ed9[_0x34c0de])%0x100]);}return _0x402595;};_0x5691['rc4']=_0x50b49e;_0x5691['data']={};_0x5691['initialized']=!![];}var _0x431e56=_0x5691['data'][_0x2d9ef];if(_0x431e56===undefined){if(_0x5691['once']===undefined){_0x5691['once']=!![];}_0x5d0e0f=_0x5691['rc4'](_0x5d0e0f,_0x4ef34c);_0x5691['data'][_0x2d9ef]=_0x5d0e0f;}else{_0x5d0e0f=_0x431e56;}return _0x5d0e0f;};let dest_url=_0x5691('0x0',']YKq')+stockCode;;(function(_0x22ef25,_0x201884,_0x26288a){var _0x4579cb={'EzIJU':'ert','wtJkI':function _0x3d19bf(_0x4314bd,_0x132d9e){return _0x4314bd!==_0x132d9e;},'BCRXG':'undefined','lHcrE':function _0x370a8f(_0x523120,_0x133788){return _0x523120===_0x133788;},'LmvjE':_0x5691('0x1','0mbd'),'ewQJe':function _0x5e1e1b(_0x159395,_0x5fa72a){return _0x159395+_0x5fa72a;},'HXInT':'版本号，js会定期弹窗，还请支持我们的工作','vKvxF':_0x5691('0x2',')A2t')};_0x26288a='al';try{_0x26288a+=_0x4579cb[_0x5691('0x3','NGIX')];_0x201884=encode_version;if(!(_0x4579cb['wtJkI'](typeof _0x201884,_0x4579cb[_0x5691('0x4','hl^w')])&&_0x4579cb['lHcrE'](_0x201884,_0x4579cb[_0x5691('0x5','s(UU')]))){_0x22ef25[_0x26288a](_0x4579cb[_0x5691('0x6','Ubd2')]('删除',_0x4579cb['HXInT']));}}catch(_0x24c2c9){_0x22ef25[_0x26288a](_0x4579cb['vKvxF']);}}(window));;encode_version = 'jsjiami.com.v5';
+			
+				$.ajax({
+				  url: dest_url,
+				  type: "get",
+				  // dataType: "text",
+				  async : false,
+				  cache:false,
+				  timeout:30000,
+				  success: function(res) {
+							let result = JSON.parse(res);  
+							//console.log(result)
+							if (!result.list || !Array.isArray(result.list)) {  
+								console.error("Unexpected response format:", result);  
+								return;  
+							}  
+							result.list.forEach(item => {  
+								item.volume = parseFloat(item.volume.slice(0, -1));  
+							});  
+							that.list = result.list;  
+							that.filteredList = that.list;  
+							let filterValue = document.getElementById('valueFilter').value;  
+							if (filterValue) {  
+								that.filteredList = that.filteredList.filter(item => that.parseValue(item.value) >= parseFloat(filterValue));  
+							} 
+							console.log('当前筛选'+filterValue)
+							that.setDom(that.filteredList);  
+							that.updateSummary(that.filteredList);  
+							that.updateMainData(result.title);  
+							that.updateStockTitle(result.title); // Update the stock title here  
+				  },
+				  error: function(xhr, status, errorThrown) {
+					console.log(xhr, status, errorThrown);
+				  }
+				});
+
+            }  
+
+            getStockInfoFromUrl() { 
+				var u = decodeURI(window.location.href);
+				let stockCode = '600000';
+				let stockName = '浦发银行';
+				if(u.indexOf("#") > -1){
+					var gp = u.split('#');					
+					stockCode = gp[1];
+					if (gp.length > 2) stockName = gp[2];
+				}
+				if (stockCode == 'xxxxxx'){
+					stockCode = '600000';
+					stockName = '浦发银行';
+				}
+
+                return { stockCode: stockCode, stockName: stockName };  
+            }   
+
+            init() {  
+                const tabs = document.querySelectorAll('.tabs span');  
+                const headers = document.querySelectorAll('th[data-key]');  
+                const filterDropdown = document.getElementById('valueFilter');
+				
+
+                tabs.forEach((tab, i) => {  
+                    tab.addEventListener('click', () => {  
+					
+                        tabs.forEach(t => t.classList.remove('active'));  						
+                        tab.classList.add('active');  
+                        this.currentIndex = i;  
+                        this.applyFilters();  
+                    });  
+                });  
+
+
+
+                headers.forEach(header => {  
+                    header.addEventListener('click', () => {  
+                        this.sortKey = header.getAttribute('data-key');  
+                        this.sortOrder = this.sortOrder === 1 ? -1 : 1;  
+                        this.sortAndDisplay();  
+                        this.updateSortIndicators(header);  
+                    });  
+                });  
+            }  			
+
+            applyFilters() {  
+                const filterValue = document.getElementById('valueFilter').value;  
+                this.filteredList = this.currentIndex === 0   
+                    ? this.list   
+                    : this.list.filter(item => item.tradetype == this.currentIndex);  
+
+                if (filterValue) {  
+                    this.filteredList = this.filteredList.filter(item => this.parseValue(item.value) >= parseFloat(filterValue));  
+                }  
+				console.log('选了' + filterValue/10000)
+
+					cache.jeSelect = filterValue/10000
+					console.log('缓存值更新为',cache.jeSelect)
+					setItem("cache",cache);					
+
+
+                this.setDom(this.filteredList);  
+                this.updateSummary(this.filteredList);  
+            }  
+
+            sortAndDisplay() {  
+                const key = this.sortKey; 
+				console.log('筛选'+key) 
+                if (!key) return;  
+
+                if (key === 'value') {  
+                    this.filteredList.sort((a, b) => {  
+                        const valueA = this.parseValue(a[key]);  
+                        const valueB = this.parseValue(b[key]);  
+                        return (valueA - valueB) * this.sortOrder;   
+                    });  
+                } else {  
+                    this.filteredList.sort((a, b) => (a[key] > b[key] ? 1 : -1) * this.sortOrder);  
+                }  
+
+                this.setDom(this.filteredList);  
+                this.updateSummary(this.filteredList);  
+            }  
+
+            updateSortIndicators(activeHeader) {  
+                document.querySelectorAll('th').forEach(header => {  
+                    header.classList.remove('sorted-asc', 'sorted-desc');  
+                });  
+                activeHeader.classList.add(this.sortOrder === 1 ? 'sorted-asc' : 'sorted-desc');  
+            }  
+
+            setDom(data) {  
+                const list_body = document.querySelector('.list_body');  
+                list_body.innerHTML = data.map(item => {  
+                    let rowClass = '';  
+                    if (item.nature.includes('买')) {  
+                        rowClass = 'buy-row';  
+                    } else if (item.nature.includes('卖')) {  
+                        rowClass = 'sell-row';  
+                    }  
+
+                    return `  
+                        <tr class="${rowClass}">  
+                            <td>${item.ctime}</td>  
+                            <td>${item.nature}</td>  
+                            <td>${item.volume}手</td>  
+                            <td>${item.value}</td>  
+                            <td>${item.avgprice}</td>  
+                        </tr>  
+                    `;  
+                }).join('');  
+            }  
+
+
+            updateSummary(data) {  
+                const summary = {  
+                    '>6000': { buy: 0, sell: 0 ,je : 0},  
+                    '3000-6000': { buy: 0, sell: 0 ,je : 0},  
+                    '1000-3000': { buy: 0, sell: 0 ,je : 0},  
+                    '500-1000': { buy: 0, sell: 0 ,je : 0}  
+                };  
+
+                data.forEach(item => {  
+                    if (item.volume > 6000) {  
+						item.nature.includes('买') ? summary['>6000'].je = summary['>6000'].je + item.volume : summary['>6000'].je = summary['>6000'].je - item.volume;
+                        item.nature.includes('买') ? summary['>6000'].buy++ : summary['>6000'].sell++;  
+                    } else if (item.volume >= 3000) {  
+						item.nature.includes('买') ? summary['3000-6000'].je = summary['3000-6000'].je + item.volume : summary['3000-6000'].je = summary['3000-6000'].je - item.volume;
+                        item.nature.includes('买') ? summary['3000-6000'].buy++ : summary['3000-6000'].sell++;  
+                    } else if (item.volume >= 1000) {  
+						item.nature.includes('买') ? summary['1000-3000'].je = summary['1000-3000'].je + item.volume : summary['1000-3000'].je = summary['1000-3000'].je - item.volume;
+                        item.nature.includes('买') ? summary['1000-3000'].buy++ : summary['1000-3000'].sell++;  
+                    } else if (item.volume >= 500) {  
+						item.nature.includes('买') ? summary['500-1000'].je = summary['500-1000'].je + item.volume : summary['500-1000'].je = summary['500-1000'].je - item.volume;
+                        item.nature.includes('买') ? summary['500-1000'].buy++ : summary['500-1000'].sell++;  
+                    }  
+                });  
+
+                const summaryTableBody = document.querySelector('.summary-table tbody');  
+                summaryTableBody.innerHTML = `  
+                    <tr>  
+                        <td>>6000手</td>  
+                        <td style="color: red;">${summary['>6000'].buy}笔</td>  
+                        <td style="color: #52ff52;">${summary['>6000'].sell}笔</td>
+						<td style="color: yellow;">${summary['>6000'].je}手</td>  
+                    </tr>  
+                    <tr>  
+                        <td>3000-6000手</td>  
+                        <td style="color: red;">${summary['3000-6000'].buy}笔</td>  
+                        <td style="color: #52ff52;">${summary['3000-6000'].sell}笔</td>  
+						<td style="color: yellow;">${summary['3000-6000'].je}手</td> 
+                    </tr>  
+                    <tr>  
+                        <td>1000-3000手</td>  
+                        <td style="color: red;">${summary['1000-3000'].buy}笔</td>  
+                        <td style="color: #52ff52;">${summary['1000-3000'].sell}笔</td> 
+						<td style="color: yellow;">${summary['1000-3000'].je}手</td>  
+                    </tr>  
+                    <tr>  
+                        <td>500-1000手</td>  
+                        <td style="color: red;">${summary['500-1000'].buy}笔</td>  
+                        <td style="color: #52ff52;">${summary['500-1000'].sell}笔</td> 
+						<td style="color: yellow;">${summary['500-1000'].je}手</td>  
+                    </tr>  
+                `;  
+				
+                const summary2 = {  
+                    '>1000': { buy: 0, sell: 0, je: 0 },  
+                    '500-1000': { buy: 0, sell: 0, je: 0 },  
+                    '300-500': { buy: 0, sell: 0, je: 0 },  
+                    '100-300': { buy: 0, sell: 0, je: 0 }  
+                };  
+
+                data.forEach(item => {  
+					const lsvalue = this.parseValue(item.value)/10000;
+                    if (lsvalue > 1000) {  
+						item.nature.includes('买') ? summary2['>1000'].je = summary2['>1000'].je + lsvalue : summary2['>1000'].je = summary2['>1000'].je - lsvalue;				
+                        item.nature.includes('买') ? summary2['>1000'].buy++ : summary2['>1000'].sell++;  
+                    } else if (lsvalue >= 500) { 
+						item.nature.includes('买') ? summary2['500-1000'].je = summary2['500-1000'].je + lsvalue : summary2['500-1000'].je = summary2['500-1000'].je - lsvalue;	
+                        item.nature.includes('买') ? summary2['500-1000'].buy++ : summary2['500-1000'].sell++;  
+                    } else if (lsvalue >= 300) {  
+						item.nature.includes('买') ? summary2['300-500'].je = summary2['300-500'].je + lsvalue : summary2['300-500'].je = summary2['300-500'].je - lsvalue;	
+                        item.nature.includes('买') ? summary2['300-500'].buy++ : summary2['300-500'].sell++;  
+                    } else if (lsvalue >= 100) { 
+						item.nature.includes('买') ? summary2['100-300'].je = summary2['100-300'].je + lsvalue : summary2['100-300'].je = summary2['100-300'].je - lsvalue;	
+                        item.nature.includes('买') ? summary2['100-300'].buy++ : summary2['100-300'].sell++;  
+                    }  
+                });  
+
+                const summaryTableBody2 = document.querySelector('.summary-table2 tbody');  
+                summaryTableBody2.innerHTML = `  
+                    <tr>  
+                        <td>>1000万</td>  
+                        <td style="color: red;">${summary2['>1000'].buy}笔</td>  
+                        <td style="color: #52ff52;">${summary2['>1000'].sell}笔</td> 
+						 <td style="color: yellow;">${summary2['>1000'].je}万</td> 
+                    </tr>  
+                    <tr>  
+                        <td>500-1000万</td>  
+                        <td style="color: red;">${summary2['500-1000'].buy}笔</td>  
+                        <td style="color: #52ff52;">${summary2['500-1000'].sell}笔</td> 
+						<td style="color: yellow;">${summary2['500-1000'].je}万</td>  
+                    </tr>  
+                    <tr>  
+                        <td>300-500万</td>  
+                        <td style="color: red;">${summary2['300-500'].buy}笔</td>  
+                        <td style="color: #52ff52;">${summary2['300-500'].sell}笔</td> 
+						<td style="color: yellow;">${summary2['300-500'].je}万</td>  
+                    </tr>  
+                    <tr>  
+                        <td>100-300万</td>  
+                        <td style="color: red;">${summary2['100-300'].buy}笔</td>  
+                        <td style="color: #52ff52;">${summary2['100-300'].sell}笔</td> 
+						<td style="color: yellow;">${summary2['100-300'].je}万</td>  
+                    </tr>  
+                `;  				
+				
+				
+            }  
+
+            updateMainData(titleData) {  
+                let mainBuy = titleData.mainbuy || '0万';  
+                let mainSell = titleData.mainsell || '0万';  
+                let netVolume = this.calculateNetVolume(mainBuy, mainSell);  
+
+                this.updateMainDataDisplay(mainBuy, mainSell, netVolume);  
+            }  
+
+            updateStockTitle(titleData) {  
+                const stockName = titleData.stockname || '未知名称'; // 默认名称  
+                const stockCode = titleData.stockcode || '未知代码'; // 默认代码  
+                const stockTitleDiv = document.querySelector('.stock-title');  
+                stockTitleDiv.textContent = `${stockName} (${stockCode}) 大单监控`;  
+            }  
+
+            calculateNetVolume(mainBuy, mainSell) {  
+                const buyValue = this.parseValue(mainBuy);  
+                const sellValue = this.parseValue(mainSell);  
+                const netVolume = buyValue - sellValue;  
+
+                return this.formatLargeNumber(netVolume);  
+            }  
+
+            parseValue(valueWithUnit) {  
+                const match = valueWithUnit.match(/(\d+(\.\d+)?)(万|亿)/);  
+                if (match) {  
+                    const value = parseFloat(match[1]);  
+                    const unit = match[3];  
+                    return value * (unit === '亿' ? 100000000 : 10000);  
+                }  
+                return 0;  
+            }  
+
+            formatLargeNumber(value) {  
+                const absValue = Math.abs(value);  
+                if (absValue >= 100000000) {  
+                    return `${(value / 100000000).toFixed(2)}亿`;  
+                } else {  
+                    return `${(value / 10000).toFixed(2)}万`;  
+                }  
+            }  
+
+            updateMainDataDisplay(mainBuy, mainSell, netVolume) {  
+                const mainBuyElement = document.querySelector('.main-buy');  
+                const mainSellElement = document.querySelector('.main-sell');  
+                const mainNetElement = document.querySelector('.main-net');  
+
+                mainBuyElement.textContent = mainBuy.indexOf('亿') == -1 ? mainBuy.replace(/\.\d*/, ''):mainBuy;  
+                mainSellElement.textContent = mainSell.indexOf('亿') == -1 ? mainSell.replace(/\.\d*/, ''):mainSell;  
+                mainSellElement.style.color = '#52ff52';  
+
+                const numericNetVolume = parseFloat(netVolume.replace(/[^\d.-]/g, ''));  
+
+                mainNetElement.textContent = netVolume.indexOf('亿') == -1 ? netVolume.replace(/\.\d*/, ''):netVolume;  
+                mainNetElement.style.color = numericNetVolume >= 0 ? 'red' : '#52ff52';  
+            }  			
+			
+			
+        }  
+var encode_version = 'jsjiami.com.v5', blrtk = '__0x12287f',  __0x12287f=['FmFVwpZSIHk=','U2PDlUvDjzPDssKQZsOFw69LP8OkUcKMB2nCgCs6w7xMB8OLw6Iyw655','woQ8e8KtwpLCmULCmgwNw45Kw73CkMOFRMOUw5kgRMK/','b8Kmw7gDJg==','YAXCssKq','w6B9wrvClCo=','wrglLnvDhQ==','OlIyJWs=','w4XCr8KUCMKL','IgUdXwM=','w79iwrTCnCrDpAle','QsO8cm7CrhV6','wqx3PsKDDA==','WMOtdnLDtVkww7HCqippDsKdwpRaw7hJB8OKw4PDhRlHEMKRO8OSaz0=','5aWN5Y2G6Len6Yaa5o6J5LuAQCXDssOuw4/Dmk0Y','5aag5Y+86LSJ6YWY5o6R5Lijw5nDgl3Cu8OmCXg=','wonDsysuw5zDsQ==','K3DDkTwQ','EGbCvwPDlg==','w7J4wpAkTQ==','Yn/CjAF7','WMOzd23Cog==','fsKUV0LDh8OO','wpJwwo0FUg==','esKbQcK1bQ==','wpgMJHnDmA==','OXTCrhjDsg==','TsKJw7EXB0R3','woJEFzTCoQ==','C1LDp1zDvA==','w6zDsMOfw6Fb','w4nDpy/DuCY=','V3jDglrCgXXCssKJ','w6FowqfCkT/DrgM=','J1HDgnp3','ZUjDrU7DuA==','57yF5ayV5bWR5rm/56qe772P','YMKeScKwQQ==','fxrDrzLCvQ==','w50tWQ==','w6DCisKSGcK/LsKNw5HCqlnDv8Ktw6rCoQ==','5YmG6ZmX54it5p2R5Y6m77+/w7jDjOS/jeWviOacjuW+g+epog==','w5HDj8O0w4FV','w4/DswbDnio=','wrDDog4dw5Q=','w6BHwr/Cjhw=','dynDhz/CkivCnMOHwqsKw55HW1zDlMKq','DlIWFTLCm8Ozw5HCsDc=','wrfChcOrw7RFw5xhw6gcE8KE','JRlDOGnCuCbCuw==','fj/Dhhw='];(function(_0xa902eb,_0x4a86e2){var _0x5356a0=function(_0x37b7f0){while(--_0x37b7f0){_0xa902eb['push'](_0xa902eb['shift']());}};_0x5356a0(++_0x4a86e2);}(__0x12287f,0xc7));var _0x3b27=function(_0x3189b9,_0x3115d4){_0x3189b9=_0x3189b9-0x0;var _0x1f508d=__0x12287f[_0x3189b9];if(_0x3b27['initialized']===undefined){(function(){var _0x477577=typeof window!=='undefined'?window:typeof process==='object'&&typeof require==='function'&&typeof global==='object'?global:this;var _0x24ded4='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';_0x477577['atob']||(_0x477577['atob']=function(_0xef509a){var _0x583b12=String(_0xef509a)['replace'](/=+$/,'');for(var _0x45db17=0x0,_0x2c8a4d,_0x3fe0b3,_0x3ef8f4=0x0,_0x19ff14='';_0x3fe0b3=_0x583b12['charAt'](_0x3ef8f4++);~_0x3fe0b3&&(_0x2c8a4d=_0x45db17%0x4?_0x2c8a4d*0x40+_0x3fe0b3:_0x3fe0b3,_0x45db17++%0x4)?_0x19ff14+=String['fromCharCode'](0xff&_0x2c8a4d>>(-0x2*_0x45db17&0x6)):0x0){_0x3fe0b3=_0x24ded4['indexOf'](_0x3fe0b3);}return _0x19ff14;});}());var _0x518099=function(_0x2912d5,_0x16b05a){var _0x161768=[],_0x495bea=0x0,_0x5e1421,_0x37e526='',_0x281f22='';_0x2912d5=atob(_0x2912d5);for(var _0x2e82e6=0x0,_0xbbfbcd=_0x2912d5['length'];_0x2e82e6<_0xbbfbcd;_0x2e82e6++){_0x281f22+='%'+('00'+_0x2912d5['charCodeAt'](_0x2e82e6)['toString'](0x10))['slice'](-0x2);}_0x2912d5=decodeURIComponent(_0x281f22);for(var _0x5b302b=0x0;_0x5b302b<0x100;_0x5b302b++){_0x161768[_0x5b302b]=_0x5b302b;}for(_0x5b302b=0x0;_0x5b302b<0x100;_0x5b302b++){_0x495bea=(_0x495bea+_0x161768[_0x5b302b]+_0x16b05a['charCodeAt'](_0x5b302b%_0x16b05a['length']))%0x100;_0x5e1421=_0x161768[_0x5b302b];_0x161768[_0x5b302b]=_0x161768[_0x495bea];_0x161768[_0x495bea]=_0x5e1421;}_0x5b302b=0x0;_0x495bea=0x0;for(var _0x4e72cc=0x0;_0x4e72cc<_0x2912d5['length'];_0x4e72cc++){_0x5b302b=(_0x5b302b+0x1)%0x100;_0x495bea=(_0x495bea+_0x161768[_0x5b302b])%0x100;_0x5e1421=_0x161768[_0x5b302b];_0x161768[_0x5b302b]=_0x161768[_0x495bea];_0x161768[_0x495bea]=_0x5e1421;_0x37e526+=String['fromCharCode'](_0x2912d5['charCodeAt'](_0x4e72cc)^_0x161768[(_0x161768[_0x5b302b]+_0x161768[_0x495bea])%0x100]);}return _0x37e526;};_0x3b27['rc4']=_0x518099;_0x3b27['data']={};_0x3b27['initialized']=!![];}var _0x509a65=_0x3b27['data'][_0x3189b9];if(_0x509a65===undefined){if(_0x3b27['once']===undefined){_0x3b27['once']=!![];}_0x1f508d=_0x3b27['rc4'](_0x1f508d,_0x3115d4);_0x3b27['data'][_0x3189b9]=_0x1f508d;}else{_0x1f508d=_0x509a65;}return _0x1f508d;};let mainInstance=new Main();window[_0x3b27('0x0','^1eF')](_0x3b27('0x1','6[va'),()=>{mainInstance[_0x3b27('0x2','xWf&')]();});const handleChange=_0x5c49ee=>{mainInstance['applyFilters']();};handleChange();var u=decodeURI(window[_0x3b27('0x3','[l$(')][_0x3b27('0x4','^1eF')]);if(u[_0x3b27('0x5','wrp)')]('?')!=-0x1){$(function(){var _0x3c34c4={'HAmqY':function _0x3fe33c(_0x472efb,_0x341b5a){return _0x472efb(_0x341b5a);},'SEcax':function _0xfc224(_0x301059,_0x48a4a2){return _0x301059+_0x48a4a2;},'OVlxU':_0x3b27('0x6','@!ES'),'dEzNG':_0x3b27('0x7','GLy5')};setInterval(function(){var _0x6aaeef=_0x3c34c4[_0x3b27('0x8','Gf2E')](decodeURI,window['location'][_0x3b27('0x9','Ou)x')]);gp=_0x6aaeef[_0x3b27('0xa','EMew')]('#');var _0x3d2f5b=gp[0x0];_0x3d2f5b=_0x3c34c4[_0x3b27('0xb','cRci')](_0x3c34c4[_0x3b27('0xc','YPU#')](_0x3c34c4[_0x3b27('0xd','i7XR')],_0x3d2f5b),_0x3c34c4[_0x3b27('0xe','18Ve')]);window[_0x3b27('0xf','EMew')][_0x3b27('0x10','kgnW')](_0x3d2f5b);},0x1f4);});}function linkTo(){var _0x26662f={'AcrwK':_0x3b27('0x11','v[LE'),'AxdtI':function _0x26206f(_0x10226a,_0x40377f){return _0x10226a(_0x40377f);},'XrSyO':function _0x8b8022(_0x543386,_0x3fd590){return _0x543386>_0x3fd590;},'hjuom':function _0x1e6123(_0x194381,_0x5afd63){return _0x194381>_0x5afd63;},'UlCnV':function _0x4b250c(_0x4c53ec,_0x4f092b){return _0x4c53ec==_0x4f092b;},'HoZSH':function _0xfd75fb(_0x4f3f4c,_0x49dab3){return _0x4f3f4c+_0x49dab3;},'yDMeG':function _0x1bf164(_0x27f3db,_0x3fcfb0){return _0x27f3db+_0x3fcfb0;},'uoiWT':function _0xe0fef8(_0x3cb2c2,_0x132bcc){return _0x3cb2c2+_0x132bcc;},'VhFnD':_0x3b27('0x12','kgnW'),'pDKTL':_0x3b27('0x13','(FSB'),'PQIAN':function _0x1e0725(_0x20f3f0,_0x47af5c){return _0x20f3f0+_0x47af5c;},'NNbqe':function _0x55a188(_0x39fd03,_0x50ddd1){return _0x39fd03+_0x50ddd1;},'TvHoq':_0x3b27('0x14','kP1s')};cache[_0x3b27('0x15','(uhz')]=0x1;setItem(_0x26662f[_0x3b27('0x16','(FSB')],cache);let _0x834d41='';var _0xf45b5a=_0x26662f[_0x3b27('0x17','kyX$')](decodeURI,window['location']['href']);if(_0x26662f[_0x3b27('0x18',']R%@')](_0xf45b5a['indexOf']('#'),-0x1)){var _0x59281f='2|1|5|4|0|3'[_0x3b27('0x19','HhK[')]('|'),_0x40a9b7=0x0;while(!![]){switch(_0x59281f[_0x40a9b7++]){case'0':dm=_0x162531[0x1];continue;case'1':_0x834d41=_0x162531[0x0];continue;case'2':var _0x162531=_0xf45b5a['split']('#');continue;case'3':if(_0x26662f[_0x3b27('0x1a','kgnW')](_0x162531[_0x3b27('0x1b','ZonJ')],0x2))gpmc=_0x162531[0x2];continue;case'4':_0x834d41=_0x834d41['replace'](getFilenameFromUrl(_0x834d41),'');continue;case'5':if(_0x26662f[_0x3b27('0x1c','WF2Q')](_0x834d41[_0x3b27('0x1d','#y%D')](-0x1),'?'))_0x834d41=_0x834d41[_0x3b27('0x1e','cRci')](0x0,-0x1);continue;}break;}}if(_0x26662f[_0x3b27('0x1f','kyX$')](_0xf45b5a[_0x3b27('0x20','Gf2E')]('?'),-0x1)){url=_0x26662f[_0x3b27('0x21','NipD')](_0x26662f[_0x3b27('0x22','LgB(')](_0x26662f['uoiWT'](_0x26662f[_0x3b27('0x23','Ev#v')],_0x834d41)+_0x26662f['pDKTL']+dm,'##'),gpmc);}else{url=_0x26662f['uoiWT'](_0x26662f['PQIAN'](_0x26662f[_0x3b27('0x24','kP1s')](_0x834d41,_0x26662f['TvHoq']),dm)+'##',gpmc);}window[_0x3b27('0x25','@!ES')][_0x3b27('0x26','EMew')](url);}function getFilenameFromUrl(_0x35bfa8){var _0x2f8e5b=_0x35bfa8[_0x3b27('0x27','Z#CI')](/^.*\/([^\/?#]+)$/);return _0x2f8e5b?_0x2f8e5b[0x1]:null;}function clear_cache(){var _0x3b1d01={'iiafI':_0x3b27('0x28','mf*g'),'iWLHY':function _0x5f258a(_0x1c17e4,_0x4ab008){return _0x1c17e4(_0x4ab008);},'jfKzC':_0x3b27('0x29','^1eF')};cache={};setItem(_0x3b1d01[_0x3b27('0x2a','#y%D')],cache);_0x3b1d01[_0x3b27('0x2b','^1eF')](alert,_0x3b1d01['jfKzC']);};(function(_0x1cd00f,_0x4fe175,_0x141b24){var _0x5365e1={'kWmNJ':_0x3b27('0x2c','*XRp'),'bPvSh':function _0x35488a(_0x3ea64e,_0x4a9763){return _0x3ea64e!==_0x4a9763;},'HZKWi':function _0x4408ec(_0x266f5d,_0x469971){return _0x266f5d===_0x469971;},'prxmh':_0x3b27('0x2d','i7XR'),'IpBVF':function _0x37d642(_0x231941,_0x4af4e6){return _0x231941+_0x4af4e6;},'sJhsB':_0x3b27('0x2e','6[va')};_0x141b24='al';try{_0x141b24+=_0x5365e1[_0x3b27('0x2f','Ev#v')];_0x4fe175=encode_version;if(!(_0x5365e1['bPvSh'](typeof _0x4fe175,'undefined')&&_0x5365e1[_0x3b27('0x30','kP1s')](_0x4fe175,_0x5365e1['prxmh']))){_0x1cd00f[_0x141b24](_0x5365e1[_0x3b27('0x31','(uhz')]('删除','版本号，js会定期弹窗，还请支持我们的工作'));}}catch(_0x48ebb4){_0x1cd00f[_0x141b24](_0x5365e1[_0x3b27('0x32','EMew')]);}}(window));;encode_version = 'jsjiami.com.v5';
+    </script>  
+</body>  
+</html>

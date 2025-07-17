@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人气榜单</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000; /* 背景改为黑色 */
+            color: #fff; /* 文字颜色改为白色 */
+        }
+        .container {
+            width: 100%;
+            margin: 20px auto;
+            background: #1a1a1a; /* 容器背景改为深灰色 */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1); /* 调整阴影颜色 */
+        }
+        h1 {
+            text-align: center;
+            color: #fff; /* 标题颜色改为白色 */
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        .list-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .list {
+            width: calc(23% - 20px);
+            background: #262626; /* 列表背景改为深灰色 */
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.1); /* 调整阴影颜色 */
+            margin-bottom: 20px;
+        }
+        .list h2 {
+            text-align: center; /* 标题居中对齐 */
+            margin-bottom: 10px;
+            color: #fff; /* 子标题颜色改为白色 */
+            font-size: 1.2em;
+            border-bottom: 2px solid #444; /* 边框颜色改为深灰色 */
+            padding-bottom: 5px;
+        }
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #444; /* 边框颜色改为深灰色 */
+            transition: background-color 0.3s; /* 添加过渡效果 */
+            position: relative; /* 用于绝对定位 */
+        }
+        .list-item:last-child {
+            border-bottom: none;
+        }
+        .list-item span {
+            font-weight: bold;
+        }
+        .list-item .index {
+            margin-right: 10px;
+            font-weight: bold;
+            color: #ccc; /* 索引颜色改为浅灰色 */
+        }
+        .list-item .name {
+            flex: 1;
+            font-size: 1em;
+        }
+        .list-item .change-positive {
+            color: #d32f2f; /* 上涨颜色改为红色 */
+        }
+        .list-item .change-negative {
+            color: #388e3c; /* 下跌颜色改为绿色 */
+        }
+        .list-item .topic {
+            font-size: 0.9em;
+            color: #ccc; /* 题材颜色改为浅灰色 */
+        }
+        .list-item .popularity-tag {
+            color: #d32f2f; /* 热度标签颜色改为红色 */
+        }
+        .highlight {
+            background-color: #444; /* 高亮颜色 */
+        }
+        .hot-news-icon {
+            margin-left: 5px;
+            color: #ff5722; /* 火焰图标颜色 */
+            cursor: pointer; /* 鼠标悬停时显示手型 */
+        }
+        .hot-news-tooltip {
+            display: none;
+            position: absolute;
+            top: -45px; /* 调整为负值，使其在上方显示 */
+            left: 0;
+            background-color: #d32f2f;
+            color: #fff;
+            padding: 14px;
+            border-radius: 4px;
+            white-space: nowrap;
+            z-index: 1001; /* 提高z-index值，确保在其他元素之上 */
+        }
+        .list-item:hover .hot-news-tooltip {
+            display: block;
+        }
+        .analyse-tooltip {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: #388e3c;
+            color: #fff;
+            padding: 14px;
+            border-radius: 4px;
+            white-space: pre-wrap; /* 保留换行 */
+            max-width: 400px; /* 最大宽度 */
+            z-index: 1000;
+            font-size: 0.9em; /* 字体大小 */
+        }
+        .list-item:hover .analyse-tooltip {
+            display: block;
+        }
+        .reason-tooltip {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: #388e3c;
+            color: #fff;
+            padding: 14px;
+            border-radius: 4px;
+            white-space: pre-wrap; /* 保留换行 */
+            max-width: 400px; /* 最大宽度 */
+            z-index: 1000;
+            font-size: 0.9em; /* 字体大小 */
+        }
+        .list-item:hover .reason-tooltip {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="list-container">
+            <div class="list" id="aigupiao-list">
+                <h2>📈爱股票热榜</h2>
+                <div id="aigupiao-items"></div>
+            </div>
+            <div class="list" id="tenjqka-list">
+                <h2>📈同花顺热榜</h2>
+                <div id="tenjqka-items"></div>
+            </div>
+            <div class="list" id="longhuvip-list">
+                <h2>📈开盘啦热榜</h2>
+                <div id="longhuvip-items"></div>
+            </div>
+            <div class="list" id="ziainquant-list">
+                <h2>📈自在量化热榜</h2>
+                <div id="ziainquant-items"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchData(url) {
+            const response = await fetch(url);
+            return await response.json();
+        }
+
+        function getTodayDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}${month}${day}`;
+        }
+
+        function renderAigupiao(data) {
+            const items = data.data.slice(0, 50).map((stock, index) => {
+                const code = stock.code.replace(/^sh|sz|bj/, ''); // 去掉前缀
+                return `
+                    <div class="list-item" data-code="${code}">
+                        <span class="index">${index + 1}.</span>
+                        <span class="name">${code} ${stock.name}</span>
+                        <span class="change ${parseFloat(stock.chg_pct) > 0 ? 'change-positive' : 'change-negative'}">${stock.last} (${stock.chg_pct}%)</span>
+                        <span class="topic">${stock.theme_name}</span>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('aigupiao-items').innerHTML = items;
+        }
+
+        function renderLonghuvip(data) {
+            const items = data.List.slice(0, 50).map((stock, index) => {
+                const changeText = stock[3] > 0 ? `(<span class="change-positive">↑${stock[3]}</span>)` : stock[3] < 0 ? `(<span class="change-negative">↓${-stock[3]}</span>)` : '(无变化)';
+                return `
+                    <div class="list-item" data-code="${stock[0]}">
+                        <span class="index">${index + 1}.</span>
+                        <span class="name">${stock[0]} ${stock[1]}</span>
+                        <span class="change ${parseFloat(stock[2]) > 0 ? 'change-positive' : 'change-negative'}">${stock[2]}%</span>
+                        <span class="topic">${changeText}</span>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('longhuvip-items').innerHTML = items;
+        }
+
+        function renderTenjqka(data) {
+            const items = data.data.stock_list.slice(0, 50).map((stock, index) => {
+                const hasHotNews = stock.topic?.title ? '🔥' : '';
+                const hotNewsTooltip = stock.topic?.title ? `<span class="hot-news-tooltip" title="${stock.topic?.title}">${stock.topic?.title}</span>` : '';
+                const analyseTooltip = stock.analyse ? `<span class="analyse-tooltip">${stock.analyse}</span>` : '';
+                return `
+                    <div class="list-item" data-code="${stock.code}">
+                        <span class="index">${index + 1}.</span>
+                        <span class="name">${stock.code} ${stock.name}${hasHotNews}</span>
+                        <span class="change">${stock.tag?.popularity_tag ? `(<span class="popularity-tag">${stock.tag.popularity_tag}</span>)` : '(<span class="popularity-tag">无</span>)'}</span>
+                        <span class="topic">${stock.tag?.concept_tag?.join(', ') || '暂无题材信息'}${hotNewsTooltip}</span>
+                        ${analyseTooltip}
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('tenjqka-items').innerHTML = items;
+        }
+
+        async function fetchReason(code) {
+            const response = await fetch(`http://api.zizizaizai.com/open/stock/${code}`);
+            const data = await response.json();
+            return data.data.reason;
+        }
+
+        function renderZiainquant(data) {
+            const items = data.data.slice(0, 50).map((stock, index) => {
+                const rankDiff = stock.rank_diff;
+                const rankDiffText = rankDiff > 0 ? `(<span class="change-positive">↑${rankDiff}</span>)` :
+                           rankDiff < 0 ? `(<span class="change-negative">↓${-rankDiff}</span>)` :
+                           '(无变化)';
+                return `
+                    <div class="list-item" data-code="${stock.symbol_code}">
+                        <span class="index">${index + 1}.</span>
+                        <span class="name">${stock.symbol_code} ${stock.symbol_name}</span>
+                        <span class="change ${parseFloat(stock.last_pct) > 0 ? 'change-positive' : 'change-negative'}">${stock.last_price} (${stock.last_pct}%)</span>
+                        <span class="topic">流通: ${stock.circulation_value}亿 ${rankDiffText}</span>
+                        <span class="reason-tooltip" data-code="${stock.symbol_code}"></span>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('ziainquant-items').innerHTML = items;
+
+            document.querySelectorAll('.list-item .reason-tooltip').forEach(async (tooltip) => {
+                const code = tooltip.getAttribute('data-code');
+                const reason = await fetchReason(code);
+                tooltip.textContent = reason;
+            });
+        }
+
+        function highlightStock(code) {
+            document.querySelectorAll('.list-item').forEach(item => {
+                if (item.getAttribute('data-code') === code) {
+                    item.classList.add('highlight');
+                } else {
+                    item.classList.remove('highlight');
+                }
+            });
+        }
+
+        function setupHoverEvents() {
+            document.querySelectorAll('.list-item').forEach(item => {
+                item.addEventListener('mouseover', () => {
+                    const code = item.getAttribute('data-code');
+                    highlightStock(code);
+                });
+                item.addEventListener('mouseout', () => {
+                    document.querySelectorAll('.list-item').forEach(item => {
+                        item.classList.remove('highlight');
+                    });
+                });
+            });
+        }
+
+        async function loadAllData() {
+            const todayDate = getTodayDate(); // 获取当天日期
+            const aigupiaoData = await fetchData('https://www.aigupiao.com/Quote/get_hot_stock_list?number=100'); // 爱股票热榜
+            const longhuvipData = await fetchData('https://apphq.longhuvip.com/w1/api/index.php?Order=1&a=GetHotPHB&st=60&apiv=w21&Type=1&c=StockBidYiDong&PhoneOSNew=1'); // 开盘啦热榜
+            const tenjqkaData = await fetchData('https://eq.10jqka.com.cn/open/api/hot_list/v1/hot_stock/a/hour/data.txt'); // 同花顺热榜
+            const ziainquantData = await fetchData(`http://api.zizizaizai.com/open/sentiment/media/ths2/top?date1=${todayDate}&top_n=50`); // 自在量化热榜
+
+            renderAigupiao(aigupiaoData);
+            renderLonghuvip(longhuvipData);
+            renderTenjqka(tenjqkaData);
+            renderZiainquant(ziainquantData); // 渲染自在量化热榜
+
+            setupHoverEvents(); // 设置鼠标悬停事件
+        }
+
+        // 初始加载数据
+        loadAllData();
+
+        // 每5分钟刷新一次数据
+        setInterval(loadAllData, 300000); // 300000毫秒 = 5分钟
+    </script>
+</body>
+</html>
