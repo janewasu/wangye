@@ -1,0 +1,2404 @@
+﻿<html><head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>热点解读</title>
+    <meta name="description" content="股票热点板块与个股分析">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 引入Inter字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Inter+Mono:wght@500&amp;display=swap" rel="stylesheet">
+    <!-- 引入Normalize.css统一浏览器默认样式 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+    <!-- 引入Font Awesome图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        
+        body {
+            background-color: #121212;
+            color: #f5f5f5;
+            line-height: 1.5;
+            font-size: 14px;
+            overflow: hidden; /* 隐藏body滚动条 */
+        }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 3px;
+            height: 3px;                
+        }            
+        ::-webkit-scrollbar-thumb {
+            background-color: #444;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+        
+        @-moz-document url-prefix() {
+            html {
+                scrollbar-width: thin;
+                scrollbar-color: #444 transparent;
+            }
+        }
+        
+        /* 页面容器 - 保持左右结构 */
+        .app-container {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        /* 顶部导航栏 */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background-color: #1a1a1a;
+            border-bottom: 1px solid #2d2d2d;
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            z-index: 100;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .top-nav-left {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            width: 250px; /* 固定宽度为250px */
+            min-width: 250px; /* 固定最小宽度为250px */
+            padding: 0 15px;
+            gap: 10px;
+            border-right: 1px solid #2d2d2d;
+            justify-content: space-between; /* 使日期选择器居左，设置按钮居右 */
+        }
+        
+        .top-nav-title {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+            font-size: 16px;
+            font-weight: 700;
+            max-width: 120px;
+            color: #ff9529; /* 热点解读字体设为橙色 */
+        }
+        
+        .date-controls {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        
+        /* 修复日期选择框样式 - 增强浏览器兼容性 */
+        .date-input {
+            width: 90px;
+            padding: 5px 8px;
+            font-size: 12px;
+            background-color: #2d2d2d;
+            border: 1px solid #3a3a3a;
+            border-radius: 3px;
+            color: #ff9529;
+            font-family: 'Inter Mono', monospace;
+            /* 增强浏览器兼容性 */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            /* 新增：强制背景色和文本颜色，解决跨浏览器问题 */
+            background-image: none;
+            box-shadow: none;
+        }
+        
+        /* 针对不同浏览器的日期选择器箭头按钮 */
+        .date-input::-webkit-calendar-picker-indicator {
+            filter: invert(0.7);
+            cursor: pointer;
+            padding: 2px;
+        }
+        
+        .date-input::-moz-calendar-picker-indicator {
+            filter: invert(0.7);
+            cursor: pointer;
+            padding: 2px;
+        }
+        
+        .date-input:focus {
+            outline: none;
+            border-color: #ff9529;
+            /* 新增：焦点状态突出显示 */
+            box-shadow: 0 0 0 1px rgba(255, 149, 41, 0.3);
+        }
+        
+        /* 新增：火狐浏览器日期选择框特殊处理 */
+        @-moz-document url-prefix() {
+            .date-input {
+                background-color: #2d2d2d !important;
+                color: #ff9529 !important;
+            }
+        }
+        
+        .nav-btn {
+            color: #ff9529;
+            width: 36px;
+            height: 36px;
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            border-radius: 3px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+        
+        .nav-btn:hover {
+            background-color: rgba(255, 149, 41, 0.2);
+            color: #ffaa55;
+            transform: scale(0.95);
+        }
+        
+        .top-nav-right {
+            -webkit-box-flex: 1;
+            -ms-flex: 1;
+            flex: 1;
+            padding: 0 20px;
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            overflow: hidden;
+            justify-content: space-between;
+        }
+        
+        .sector-description {
+            color: #ff9529;
+            font-size: 16px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 20px;
+        }
+        
+        .market-stats {
+            display: none; /* 隐藏总股票数和涨停数 */
+            align-items: center;
+            gap: 15px;
+            white-space: nowrap;
+        }
+        
+        .stat-item {
+            color: #e0e0e0;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .stat-label {
+            color: #b3b3b3;
+        }
+        
+        .stat-value {
+            color: #ff9529;
+            font-weight: 500;
+        }
+        
+        /* 左侧板块导航 - 固定宽度为250px，可独立滚动 */
+        .sectors-sidebar {
+            width: 250px; /* 固定宽度为250px */
+            min-width: 250px; /* 固定最小宽度为250px */
+            background-color: #1a1a1a;
+            border-right: 1px solid #2d2d2d;
+            padding-top: 51px;
+            height: 100vh; /* 固定高度为视口高度 */
+            overflow-y: auto; /* 允许垂直滚动 */
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .sectors-list {
+            list-style: none;
+            padding: 10px 10px 0;
+        }
+        
+        .sector-item {
+            margin-bottom: 10px;
+        }
+        
+        .sector-link {
+            display: block;
+            padding: 12px 15px;
+            text-decoration: none;
+            color: #e0e0e0;
+            background-color: #262626;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            font-size: 15px;
+            font-weight: 600;
+            border: 1px solid transparent;
+            border-left: 3px solid;
+            /* 确保内容不被裁剪 */
+            overflow: visible;
+        }
+        
+        /* 板块分类左侧标识 */
+        .sector-item:nth-child(1) .sector-link { border-left-color: #4285f4; }
+        .sector-item:nth-child(2) .sector-link { border-left-color: #34a853; }
+        .sector-item:nth-child(3) .sector-link { border-left-color: #fbbc05; }
+        .sector-item:nth-child(4) .sector-link { border-left-color: #ea4335; }
+        .sector-item:nth-child(5) .sector-link { border-left-color: #8e24aa; }
+        .sector-item:nth-child(6) .sector-link { border-left-color: #ff6d00; }
+        .sector-item:nth-child(7) .sector-link { border-left-color: #00bfa5; }
+        .sector-item:nth-child(8) .sector-link { border-left-color: #7c4dff; }
+        .sector-item:nth-child(9) .sector-link { border-left-color: #ff8a65; }
+        .sector-item:nth-child(10) .sector-link { border-left-color: #00acc1; }
+        .sector-item:nth-child(11) .sector-link { border-left-color: #ff5722; }
+        .sector-item:nth-child(12) .sector-link { border-left-color: #00bcd4; }
+        .sector-item:nth-child(13) .sector-link { border-left-color: #9c27b0; }
+        .sector-item:nth-child(14) .sector-link { border-left-color: #ffeb3b; }
+        .sector-item:nth-child(15) .sector-link { border-left-color: #f06292; }
+        .sector-item:nth-child(16) .sector-link { border-left-color: #8bc34a; }
+        .sector-item:nth-child(17) .sector-link { border-left-color: #4db6ac; }
+        .sector-item:nth-child(18) .sector-link { border-left-color: #607d8b; }
+        .sector-item:nth-child(19) .sector-link { border-left-color: #ff9800; }
+        .sector-item:nth-child(20) .sector-link { border-left-color: #e91e63; }
+        
+        .sector-link:hover {
+            background-color: #282828;
+            color: #ffaa55;
+            transform: translateX(2px);
+            border-color: rgba(255,149,41,0.2);
+        }
+        
+        /* 加深选中板块的颜色，增强视觉效果 */
+        .sector-link.active {
+            background-color: rgba(255, 149, 41, 0.25); /* 加深背景色透明度 */
+            border-left-width: 3px;
+            border: 1px solid rgba(255,149,41,0.5); /* 加深边框透明度 */
+            color: #ff9529;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* 增加轻微阴影 */
+        }
+        
+        .sector-header {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            margin-bottom: 4px;
+            width: 100%;
+        }
+        
+        .sector-name {
+            -webkit-box-flex: 3;
+            -ms-flex: 3;
+            flex: 3;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #ff9529; /* 板块名称设为橙色 */
+        }
+        
+        /* 修复涨幅数据显示问题 - 增加宽度占比 */
+        .sector-change {
+            -webkit-box-flex: 3;
+            -ms-flex: 3;
+            flex: 3;
+            font-weight: 600;
+            font-size: 13px;
+            text-align: right;
+            padding: 0 5px;
+            font-family: 'Inter Mono', monospace;
+            white-space: nowrap;
+            /* 确保文本不被隐藏 */
+            overflow: visible;
+            min-width: 50px;
+        }
+        
+        /* 调整涨停家数宽度占比并向右移动 */
+        .sector-limit-up {
+            -webkit-box-flex: 1.5;
+            -ms-flex: 1.5;
+            flex: 1.5;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: right;
+            color: #ff5a5f;
+            padding: 1px 10px 1px 5px; /* 右侧增加10px内边距，使内容右移 */
+            border-radius: 3px;
+            white-space: nowrap;
+            font-family: 'Inter Mono', monospace;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 3px;
+            min-width: 50px; /* 增加最小宽度，确保内容不被压缩 */
+        }
+        
+        .sector-desc {
+            font-size: 11px;
+            font-weight: 400;
+            color: #b3b3b3;
+            line-height: 1.4;
+            max-height: 4.2em; /* 增加高度以容纳更多描述 */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* 允许显示3行 */
+            -webkit-box-orient: vertical;
+            display: -moz-box;
+            -moz-line-clamp: 3;
+            -moz-box-orient: vertical;
+        }
+        
+        /* 右侧内容区域 - 可独立滚动 */
+        .content-area {
+            -webkit-box-flex: 1;
+            -ms-flex: 1;
+            flex: 1;
+            padding: 51px 0 20px;
+            min-width: 0;
+            height: 100vh; /* 固定高度为视口高度 */
+            overflow: hidden; /* 修改为hidden，避免滚动容器冲突 */
+            position: relative;
+        }
+        
+        /* 表格容器 - 修复表头滚动问题 */
+        .table-wrapper {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            max-height: calc(100vh - 51px); /* 计算可用高度 */
+            overflow-y: auto; /* 在表格容器上设置垂直滚动 */
+            position: relative;
+        }
+        
+        /* 表格样式 - 减小列间距 */
+        .stocks-table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+        
+        .stocks-table th,
+        .stocks-table td {
+            padding: 8px 4px;
+            text-align: center;
+            overflow: hidden;
+            background-color: #262626;
+            transition: all 0.2s ease;
+        }
+        
+        /* 表头样式 - 修复固定在顶部的问题 */
+        .stocks-table th {
+            background-color: #1e1e1e;
+            color: #ff9529;
+            font-weight: 600;
+            position: sticky; /* 粘性定位 */
+            top: 0; /* 顶部对齐 */
+            z-index: 20; /* 提高层级确保在内容上方 */
+            font-size: 13px;
+            border-bottom: 1px solid #3a3a3a; /* 表头底部线条加深 */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            white-space: nowrap; /* 防止标题文字换行 */
+        }
+        
+        /* 移除"名称"列的特殊样式 */
+        .stocks-table th.name-col {
+            /* 移除z-index特殊设置，使其与其他表头保持一致 */
+        }
+        
+        .stocks-table tr {
+            border-bottom: 1px solid #3a3a3a; /* 表格横向分割线加深，更明显 */
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        /* 修复：移除行悬停时的水平位移，改用背景色变化 */
+        .stocks-table tr:hover td {
+            background-color: #2d2d2d;
+            /* 移除 transform: translateX(2px) 避免表格错位 */
+        }
+        
+        /* 涨停股票样式 */
+        .stocks-table tr.limit-up-row {
+            background-color: inherit;
+        }
+        
+        .stocks-table tr.limit-up-row .name-col {
+            color: #ff5a5f;
+            font-weight: 700;
+        }
+        
+        /* 子行样式 - 用于显示领涨描述 */
+        .stocks-table tr.sub-row {
+            display: none;
+        }
+        
+        .stocks-table tr.sub-row td {
+            background-color: #2a2a2a;
+            padding: 10px 15px;
+            border-left: 3px solid #ff9529;
+            text-align: left;
+            /* 确保子行宽度与表格匹配 */
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .sub-row-content {
+            color: #e0e0e0;
+            font-size: 13px;
+            line-height: 1.6;
+            /* 限制子行内容最大宽度，防止拉伸表格 */
+            max-width: 100%;
+            overflow-wrap: break-word;
+        }
+        
+        /* 列宽度设置 - 减小股票名称列宽度 */
+        .code-col { 
+            min-width: 50px; 
+            width: 5%;
+            font-weight: 400; 
+            font-family: 'Inter Mono', monospace; 
+            font-size: 13px;
+        }
+        .name-col { 
+            min-width: 60px;
+            width: 6%;
+            color: #f5f5f5; 
+            font-size: 13px; 
+            font-weight: 500; 
+        }
+        .high-days-col {  /* 连板数 */
+            min-width: 45px; 
+            width: 4%;
+            text-align: center;
+            color: #e0e0e0; 
+            font-size: 12px; 
+            font-family: 'Inter Mono', monospace;
+        }
+        .reason-type-col {  /* 涨停原因 */
+            min-width: 100px; 
+            width: 14%;
+            color: #b3b3b3;
+            font-size: 12px; 
+            line-height: 1.4;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+        .limit-up-time-col {  /* 涨停时间 */
+            min-width: 60px; 
+            width: 5%;
+            text-align: center;
+            color: #e0e0e0; 
+            font-size: 12px; 
+            font-family: 'Inter Mono', monospace;
+        }
+        .price-col { 
+            min-width: 55px; 
+            width: 5%;
+            text-align: right; 
+            font-weight: 400; 
+            font-family: 'Inter Mono', monospace; 
+            color: #e0e0e0; 
+            font-size: 12px; 
+        }
+        .change-col { 
+            min-width: 60px; 
+            width: 5%;
+            text-align: right; 
+            font-weight: 600; 
+            font-family: 'Inter Mono', monospace; 
+            font-size: 12px; 
+        }
+        .volume-col { 
+            min-width: 65px; 
+            width: 7%;
+            text-align: right; 
+            color: #b3b3b3;
+            font-family: 'Inter Mono', monospace; 
+            font-size: 11px; 
+        }
+        
+        .stock-up { color: #ff5a5f !important; }
+        .stock-down { color: #36b37e !important; }
+        .stock-flat { color: #888 !important; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,.2);
+            border-radius: 50%;
+            border-top-color: #ff9529;
+            -webkit-animation: spin 1s ease-in-out infinite;
+            -moz-animation: spin 1s ease-in-out infinite;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        
+        @-webkit-keyframes spin { to { -webkit-transform: rotate(360deg); } }
+        @-moz-keyframes spin { to { -moz-transform: rotate(360deg); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* 表格列设置面板样式 */
+        .settings-panel {
+            position: fixed;
+            top: 50px;
+            right: -300px;
+            width: 300px;
+            height: calc(100vh - 50px);
+            background-color: #1a1a1a;
+            border-left: 1px solid #2d2d2d;
+            z-index: 99;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+        
+        .settings-panel.active {
+            right: 0;
+        }
+        
+        .settings-header {
+            padding: 15px;
+            border-bottom: 1px solid #2d2d2d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .settings-header h3 {
+            color: #ff9529;
+            font-size: 16px;
+            margin: 0;
+        }
+        
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: #b3b3b3;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .close-btn:hover {
+            color: #ff9529;
+        }
+        
+        .settings-content {
+            padding: 15px;
+        }
+        
+        /* 日期选择器在设置面板中的样式 */
+        .settings-date-controls {
+            display: none; /* 隐藏设置面板中的日期选择器，因为已移至顶部 */
+            padding: 10px 0 15px;
+            border-bottom: 1px solid #2d2d2d;
+            margin-bottom: 15px;
+        }
+        
+        .settings-date-controls .date-controls {
+            justify-content: center;
+        }
+        
+        .settings-section {
+            margin-bottom: 20px;
+        }
+        
+        .settings-section h4 {
+            color: #f5f5f5;
+            font-size: 14px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .column-toggles, .column-order {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .toggle-item, .order-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #e0e0e0;
+            font-size: 13px;
+        }
+        
+        .toggle-item input[type="checkbox"] {
+            accent-color: #ff9529;
+        }
+        
+        .order-controls {
+            margin-left: auto;
+            display: flex;
+            gap: 5px;
+        }
+        
+        .order-btn {
+            background: transparent;
+            border: 1px solid #3a3a3a;
+            color: #b3b3b3;
+            width: 24px;
+            height: 24px;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .order-btn:hover {
+            background-color: rgba(255, 149, 41, 0.2);
+            color: #ff9529;
+            border-color: rgba(255, 149, 41, 0.3);
+        }
+        
+        /* 调整日期控制区域 */
+        .date-controls {
+            gap: 8px;
+        }
+        
+        /* 响应式布局 - 优化列显示优先级 */
+        @media (max-width: 1200px) {
+            /* 降低字体大小以节省空间 */
+            .stocks-table th, .stocks-table td {
+                font-size: 11px;
+                padding: 7px 3px;
+            }
+            
+            /* 次要列缩小宽度 */
+            .volume-col { 
+                width: 6%;
+                font-size: 10px;
+            }
+            .reason-type-col {
+                width: 12%;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .sector-name { font-size: 14px; }
+            .sector-description { font-size: 16px; }
+            
+            /* 调整列宽分配 */
+            .reason-type-col {
+                width: 12%;
+            }
+        }
+        
+        @media (max-width: 850px) {
+            /* 进一步缩小非关键列 */
+            .volume-col { 
+                width: 5%;
+            }
+            .reason-type-col {
+                width: 10%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            /* 移除将容器改为垂直排列的设置 */
+            .app-container {
+                flex-direction: row;
+                width: 100%;
+                min-width: 600px;
+            }
+            
+            /* 保持顶部导航栏高度固定 */
+            .top-nav {
+                flex-direction: row;
+                height: 50px;
+            }
+            
+            .top-nav-left, .top-nav-right {
+                width: auto;
+                padding: 0 10px;
+                border-right: 1px solid #2d2d2d;
+                border-bottom: none;
+            }
+            
+            /* 保持侧边栏位置 */
+            .sectors-sidebar {
+                position: relative;
+                border-right: 1px solid #2d2d2d;
+                padding-top: 51px;
+            }
+            
+            .content-area {
+                margin-left: 0;
+                padding-top: 51px;
+                flex: 1;
+                min-width: 0;
+            }
+            
+            /* 只在更小屏幕才隐藏涨停原因列 */
+            .reason-type-col { 
+                width: 12%;
+            }
+            
+            .settings-panel {
+                width: 250px;
+                right: -250px;
+            }
+            
+            .top-nav-title, .sector-description {
+                font-size: 16px;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            /* 小屏幕下才隐藏涨停原因列 */
+            .reason-type-col { 
+                display: none; 
+            }
+        }
+        
+        @media (max-width: 500px) {
+            /* 在极小屏幕上仍保持左右结构，但添加整体水平滚动 */
+            html {
+                overflow-x: auto;
+            }
+            
+            .app-container {
+                min-width: 450px;
+            }
+            
+            .top-nav-left, .top-nav-right { 
+                padding: 0 8px; 
+            }
+            
+            .date-input { 
+                width: 80px; 
+                font-size: 11px;
+            }
+            
+            .stocks-table th, .stocks-table td { 
+                padding: 6px 2px; 
+                font-size: 11px;
+            }
+            
+            .sector-description { 
+                font-size: 14px; 
+                max-width: 200px;
+            }
+            
+            .top-nav-title {
+                font-size: 14px;
+            }
+            
+            /* 仅在最小屏幕才隐藏部分列 */
+            .limit-up-time-col {
+                width: 8%;
+            }
+        }
+        
+        /* 呼吸效果动画 - 仅保留定义，不再应用于名称列 */
+        @keyframes breathing {
+            0% { background-color: rgba(255, 149, 41, 0.1); }
+            50% { background-color: rgba(255, 149, 41, 0.3); }
+            100% { background-color: rgba(255, 149, 41, 0.1); }
+        }
+        
+        .editing-breathing-bg {
+            animation: breathing 2s ease-in-out infinite;
+        }
+    </style>    
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="top-nav">
+        <div class="top-nav-left">
+            <!-- 日期选择器移至设置按钮左侧 -->
+            <div class="date-controls">
+                <button class="nav-btn" onclick="prev()"><i class="fa fa-chevron-left"></i></button>
+                <input type="text" id="PriceDate" class="date-input Wdate" onfocus="WdatePicker({ onpicking: cDayFunc})">
+                <button class="nav-btn" onclick="next()"><i class="fa fa-chevron-right"></i></button>
+            </div>
+            
+            <!-- 设置按钮固定于标题栏左边的最右侧 -->
+            <button class="nav-btn settings-btn" onclick="toggleSettingsPanel()"><i class="fa fa-cog"></i></button>
+        </div>
+        
+        <div class="top-nav-right">
+            <div class="sector-description" id="sectorDescription">稀土磁材 - 商务部回应稀土相关技术等物项实施出口管制</div>
+            <div class="market-stats">
+                <div class="stat-item">
+                    <span class="stat-label">总股票数：</span>
+                    <span class="stat-value" id="totalStockCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">涨停数：</span>
+                    <span class="stat-value stock-up" id="totalLimitUpCount">
+                        <span class="loading"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 设置面板 -->
+    <div id="settingsPanel" class="settings-panel">
+        <div class="settings-header">
+            <h3>表格设置</h3>
+            <button class="close-btn" onclick="toggleSettingsPanel()"><i class="fa fa-times"></i></button>
+        </div>
+        <div class="settings-content">
+            <!-- 日期选择器已移至顶部，此处隐藏 -->
+            <div class="settings-date-controls">
+                <div class="date-controls">
+                    <button class="nav-btn" onclick="prev()"><i class="fa fa-chevron-left"></i></button>
+                    <input type="text" id="PriceDate" class="date-input Wdate" onfocus="WdatePicker({ onpicking: cDayFunc})">
+                    <button class="nav-btn" onclick="next()"><i class="fa fa-chevron-right"></i></button>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h4>板块设置</h4>
+                <div class="toggle-item">
+                    <input type="checkbox" id="loadAllSectors">
+                    <label for="loadAllSectors">加载全部板块数据（默认仅显示10个）</label>
+                </div>
+            </div>
+            <div class="settings-section">
+                <h4>列显示</h4>
+                <div class="column-toggles" id="columnToggles">
+                    <!-- 列显示控制将通过JS动态生成 -->
+                </div>
+            </div>
+            <div class="settings-section">
+                <h4>列排序</h4>
+                <div class="column-order" id="columnOrder">
+                    <!-- 列排序控制将通过JS动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="app-container">
+        <!-- 左侧板块列表区域 -->
+        <aside class="sectors-sidebar">
+            <ul class="sectors-list" id="sectorList"></ul>
+        </aside>
+        
+        <!-- 右侧内容区域 -->
+        <main class="content-area" id="contentArea">
+            <!-- 内容将通过JS动态生成 -->
+        </main>
+    </div>    
+    <script type="text/javascript" src="js/json2html.js"></script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script type="text/javascript" src="DatePicker/WdatePicker.js"> </script> 
+    <script>
+        // 全局变量：存储合并后的所有股票数据
+        let globalSectorData = {
+            stocks: [],           // 合并后的所有股票（领涨页+全部页的并集）
+            leaderStocks: [],     // 领涨页股票数据
+            allStocks: [],        // 全部页股票数据
+            limitUpDetails: {},   // 涨停详情数据（涨停时间等）
+            updateTime: '',       // 数据更新时间戳
+            totalStockCount: 0,   // 总股票数量（去重后）
+            totalLimitUpCount: 0, // 总涨停数量
+            leaderOnlyCount: 0    // 领涨页独有的股票数量
+        };
+        
+        // 新增：跟踪已处理的板块数量和需要处理的总板块数
+        let processedSectorCount = 0;
+        let totalSectorsToProcess = 0;
+        
+        // 表格列配置 - 移除领涨描述列
+        let tableColumns = [
+            { id: 'code-col', name: '代码', visible: true, order: 1 },
+            { id: 'name-col', name: '名称', visible: true, order: 2 },
+            { id: 'high-days-col', name: '连板数', visible: true, order: 3 },
+            { id: 'reason-type-col', name: '涨停原因', visible: true, order: 4 },
+            { id: 'limit-up-time-col', name: '涨停时间', visible: true, order: 5 },
+            { id: 'price-col', name: '价格', visible: true, order: 6 },
+            { id: 'change-col', name: '涨跌幅', visible: true, order: 7 },
+            { id: 'volume-col', name: '成交量', visible: true, order: 8 }
+        ];
+        
+        // 数据缓存 - 新增：按日期和板块ID缓存数据
+        const sectorDataCache = new Map();
+        // 涨停详情缓存 - 按日期缓存
+        const limitUpDetailsCache = new Map();
+        
+        // 尝试从localStorage加载保存的列配置
+        function loadColumnSettings() {
+            const savedColumns = localStorage.getItem('stockTableColumns');
+            if (savedColumns) {
+                try {
+                    const parsed = JSON.parse(savedColumns);
+                    // 确保结构正确
+                    if (Array.isArray(parsed) && parsed.length === tableColumns.length) {
+                        tableColumns = parsed;
+                    }
+                } catch (e) {
+                    console.error('Failed to parse saved column settings', e);
+                }
+            }
+        }
+        
+        // 保存列配置到localStorage
+        function saveColumnSettings() {
+            localStorage.setItem('stockTableColumns', JSON.stringify(tableColumns));
+        }
+        
+        // 保留标签但不用于涨停判断
+        const UNRELATED_TAGS = ['龙头', '首板', '二板', '高换手', '低换手', '放量', '缩量', '新高', '低价', '大盘', '小盘'];
+        
+        // 存储所有板块ID，用于自动加载
+        let allSectorIds = [];
+        
+        // 控制是否加载全部板块
+        let loadAllSectors = false;
+        
+        // 格式化股票代码为6位数字
+        function formatStockCode(code) {
+            if (!code) return '';
+            // 提取数字并确保只保留前6位
+            const numericCode = code.replace(/\D/g, '');
+            return numericCode.substring(0, 6);
+        }
+        
+        // 切换设置面板显示/隐藏
+        function toggleSettingsPanel() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('active');
+            
+            // 如果显示面板，初始化设置内容
+            if (panel.classList.contains('active')) {
+                initSettingsPanel();
+            }
+        }
+        
+        // 初始化设置面板
+        function initSettingsPanel() {
+            renderColumnToggles();
+            renderColumnOrder();
+            
+            // 初始化"加载全部板块"选项
+            const loadAllCheckbox = document.getElementById('loadAllSectors');
+            loadAllCheckbox.checked = loadAllSectors;
+            
+            // 添加事件监听
+            loadAllCheckbox.addEventListener('change', (e) => {
+                loadAllSectors = e.target.checked;
+                // 重新加载数据
+                getSource();
+            });
+        }
+        
+        // 渲染列显示控制
+        function renderColumnToggles() {
+            const container = document.getElementById('columnToggles');
+            container.innerHTML = '';
+            
+            // 按顺序排序列
+            const sortedColumns = [...tableColumns].sort((a, b) => a.order - b.order);
+            
+            sortedColumns.forEach(column => {
+                const toggleItem = document.createElement('div');
+                toggleItem.className = 'toggle-item';
+                toggleItem.innerHTML = `
+                    <input type="checkbox" id="toggle-${column.id}" ${column.visible ? 'checked' : ''}>
+                    <label for="toggle-${column.id}">${column.name}</label>
+                `;
+                
+                // 添加事件监听
+                toggleItem.querySelector('input').addEventListener('change', (e) => {
+                    column.visible = e.target.checked;
+                    updateTableColumns();
+                    saveColumnSettings(); // 保存列显示设置
+                });
+                
+                container.appendChild(toggleItem);
+            });
+        }
+        
+        // 渲染列排序控制
+        function renderColumnOrder() {
+            const container = document.getElementById('columnOrder');
+            container.innerHTML = '';
+            
+            // 按顺序排序列
+            const sortedColumns = [...tableColumns].sort((a, b) => a.order - b.order);
+            
+            sortedColumns.forEach(column => {
+                const orderItem = document.createElement('div');
+                orderItem.className = 'order-item';
+                orderItem.innerHTML = `
+                    <span>${column.name}</span>
+                    <div class="order-controls">
+                        <button class="order-btn up-btn" data-id="${column.id}">
+                            <i class="fa fa-chevron-up"></i>
+                        </button>
+                        <button class="order-btn down-btn" data-id="${column.id}">
+                            <i class="fa fa-chevron-down"></i>
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(orderItem);
+            });
+            
+            // 添加排序按钮事件监听
+            document.querySelectorAll('.up-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const columnId = btn.getAttribute('data-id');
+                    moveColumnOrder(columnId, -1); // 上移
+                });
+            });
+            
+            document.querySelectorAll('.down-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const columnId = btn.getAttribute('data-id');
+                    moveColumnOrder(columnId, 1); // 下移
+                });
+            });
+        }
+        
+        // 调整列顺序
+        function moveColumnOrder(columnId, direction) {
+            // 找到当前列
+            const currentIndex = tableColumns.findIndex(col => col.id === columnId);
+            if (currentIndex === -1) return;
+            
+            // 计算新位置
+            const newIndex = currentIndex + direction;
+            
+            // 检查边界
+            if (newIndex < 0 || newIndex >= tableColumns.length) return;
+            
+            // 交换位置
+            [tableColumns[currentIndex], tableColumns[newIndex]] = [tableColumns[newIndex], tableColumns[currentIndex]];
+            
+            // 更新排序号
+            updateColumnOrders();
+            
+            // 重新渲染排序控制
+            renderColumnOrder();
+            
+            // 更新表格
+            updateTableColumns();
+            
+            // 保存列排序设置
+            saveColumnSettings();
+        }
+        
+        // 更新列排序号
+        function updateColumnOrders() {
+            tableColumns.forEach((column, index) => {
+                column.order = index + 1;
+            });
+        }
+        
+        // 计算当前可见的列数
+        function getVisibleColumnCount() {
+            return tableColumns.filter(column => column.visible).length;
+        }
+        
+        // 更新表格列的显示和顺序，并同步更新子行的colspan
+        function updateTableColumns() {
+            // 获取表头和表体
+            const thead = document.querySelector('.stocks-table thead tr');
+            const tbodyRows = document.querySelectorAll('.stocks-table tbody tr:not(.sub-row)');
+            
+            if (!thead) return; // 如果表格还未加载，直接返回
+            
+            // 按顺序排序列
+            const sortedColumns = [...tableColumns].sort((a, b) => a.order - b.order);
+            
+            // 更新表头
+            thead.innerHTML = '';
+            sortedColumns.forEach(column => {
+                if (column.visible) {
+                    const th = document.createElement('th');
+                    th.className = column.id;
+                    // 移除"名称"列的特殊样式
+                    th.textContent = column.name;
+                    thead.appendChild(th);
+                }
+            });
+            
+            // 更新表体行
+            tbodyRows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const newCells = [];
+                
+                // 收集可见列的单元格
+                sortedColumns.forEach((column) => {
+                    if (column.visible) {
+                        // 找到对应索引的单元格
+                        const cell = Array.from(cells).find(cell => cell.classList.contains(column.id));
+                        if (cell) {
+                            newCells.push(cell);
+                        }
+                    }
+                });
+                
+                // 清空行并添加新的单元格顺序
+                row.innerHTML = '';
+                newCells.forEach(cell => {
+                    row.appendChild(cell);
+                });
+            });
+            
+            // 更新子行的colspan以匹配可见列数
+            updateSubRowColspan();
+        }
+        
+        // 更新子行的colspan以匹配当前可见列数
+        function updateSubRowColspan() {
+            const visibleCount = getVisibleColumnCount();
+            const subRows = document.querySelectorAll('.stocks-table tr.sub-row td');
+            
+            subRows.forEach(td => {
+                td.colSpan = visibleCount;
+            });
+        }
+        
+        var tt = "";
+        var gt = "";
+        var jt = "";
+        var dt = "";
+        var k = 0;        
+        window.onload = function() {
+            // 加载保存的列配置
+            loadColumnSettings();
+            
+            var day = new Date();
+            gt = day.getTime();            
+            jt = Math.round(gt/1000);
+            var mymonth = day.getMonth()+1;
+            var myday = day.getDate();
+            if(mymonth < 10) mymonth = "0" + mymonth;
+            if(myday < 10) myday = "0" + myday;
+            tt = day.getFullYear() + "-" + mymonth + "-" + myday;
+            dt = tt;            
+            getSource();
+            
+            // 初始化表格列设置
+            updateTableColumns();
+            
+            // 监听窗口大小变化，动态调整表格布局
+            window.addEventListener('resize', updateTableColumns);
+        }
+        
+        var p = 0;        
+        function time_range(beginTime, endTime) {
+            var strb = beginTime.split(":");
+            if (strb.length != 2) return false;
+
+            var stre = endTime.split(":");
+            if (stre.length != 2) return false;
+
+            var b = new Date();
+            var e = new Date();
+            var n = new Date();
+
+            b.setHours(strb[0]);
+            b.setMinutes(strb[1]);
+            e.setHours(stre[0]);
+            e.setMinutes(stre[1]);
+
+            if (n.getTime() - b.getTime() > 0 && n.getTime() - e.getTime() < 0) {
+                getSource();
+                p++;                                                        
+                return true;                
+            } else {
+                return false;     
+            }
+        }　　　
+        
+        
+        $(function() {
+            setInterval(function() {
+                if(k == 0){
+                    time_range("9:00","15:15")
+                }                
+            }, 60000);
+        })
+            
+        function keepTwoDecimal(num) {  
+               var result = parseFloat(num);  
+               if (isNaN(result)) return false;  
+               result = Math.round(num * 100) / 100;  
+               return result;  
+        };
+            
+        Date.prototype.Format = function (fmt) {
+            var o = {
+            "M+": this.getMonth() + 1, //月份
+            "d+": this.getDate(), //日
+            "h+": this.getHours(), //小时
+            "m+": this.getMinutes(), //分
+            "s+": this.getSeconds(), //秒
+            "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+            "S": this.getMilliseconds() //毫秒
+            };
+            if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+            for (var k in o)
+            if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+            return fmt;
+        };
+
+        function getLocalTime(nS) {                  
+        return new Date(parseInt(nS*1000)).Format("yyyy-MM-dd")}
+        
+        function cDayFunc(dp){ 
+            var date = dp.cal.getNewDateStr();            
+            BookingRmk(date);                
+        }
+        
+        function BookingRmk(date){         
+            tt = date;
+            var date1 = new Date(tt);
+            var date2 = new Date(dt);                        
+            k = 0;
+            if(date1.getTime() < date2.getTime()){            
+                k = 1;                    
+                tradeday();                    
+            }
+            p = 0;
+            z = 0;
+            // 重置计数器
+            processedSectorCount = 0;
+            totalSectorsToProcess = 0;
+            
+            // 清除缓存（日期变更时）
+            sectorDataCache.clear();
+            limitUpDetailsCache.clear();
+            
+            getSource();
+        }
+        
+        // 前一天 - 自动跳过非交易日
+        function prev(){  
+            pn = -1;
+            findNextTradingDay();
+        }
+        
+        // 后一天 - 自动跳过非交易日
+        function next(){                  
+            pn = 1;
+            findNextTradingDay();
+        }
+        
+        // 查找下一个交易日
+        function findNextTradingDay() {
+            var day = new Date(tt);
+            day.setTime(day.getTime() + pn * 24 * 60 * 60 * 1000);
+            tt = day.Format("yyyy-MM-dd");
+            
+            // 检查是否为周末
+            var dayOfWeek = day.getDay();
+            if (dayOfWeek === 0 || dayOfWeek === 6) { // 0是周日，6是周六
+                findNextTradingDay(); // 递归查找下一天
+                return;
+            }
+            
+            // 检查是否为交易日
+            gt = new Date(tt).getTime();
+            jt = Math.round(gt / 1000);
+            var url = "https://flash-api.xuangubao.cn/api/surge_stock/plates?date=" + jt;
+            
+            $.ajax({
+                type: "get",
+                url: url,
+                dataType: "json",
+                async: false,
+                cache: false,
+                timeout: 3000,
+                success: function(data) {
+                    if (!data.data || !data.data.items || data.data.items.length === 0) {
+                        // 非交易日，继续查找
+                        findNextTradingDay();
+                    } else {
+                        // 找到交易日，更新数据
+                        k = 1;
+                        processedSectorCount = 0;
+                        totalSectorsToProcess = 0;
+                        
+                        // 清除缓存（日期变更时）
+                        sectorDataCache.clear();
+                        limitUpDetailsCache.clear();
+                        
+                        BookingRmk(tt);
+                    }
+                },
+                error: function() {
+                    // 请求失败，继续查找
+                    findNextTradingDay();
+                }
+            });
+        }
+        
+        var pn = -1;
+        function tradeday() {  //判断最后交易日
+            var day = new Date(tt);                            
+            for (var i = 1; i < 100; i++){    //节假日                                                                                                        
+                if(i > 1){
+                    day.setTime(day.getTime() + pn*24*60*60*1000);                                
+                }    
+                tt = day.Format("yyyy-MM-dd");
+                gt = new Date(tt).getTime();
+                jt = Math.round(gt/1000);
+                if(tt == dt){    
+                    k = 0;
+                    getSource();
+                    break;
+                }
+                var url = "https://flash-api.xuangubao.cn/api/surge_stock/plates?date=" + jt;
+                var res = [];
+                $.ajax({
+                    type: "get",
+                    url: url,
+                    dataType: "json",
+                    async : false,
+                    cache:false,
+                    timeout:3000,                        
+                    success: function(data) {                            
+                        if(data.data.items){
+                            res = data.data.items;
+                        }else{
+                            res.push()    
+                        }                            
+                    }
+                });
+                if(res.length != 0){                        
+                    break;
+                }
+            }
+        }    
+        
+        // 存储板块股票数量、涨跌幅和涨停数量数据
+        var sectorMetrics = {};
+        
+        function getSource() {
+            document.getElementById("PriceDate").value = tt;
+            
+            var url1 = "https://flash-api.xuangubao.cn/api/surge_stock/plates"; 
+            var url2 = "https://flash-api.xuangubao.cn/api/surge_stock/plates?date=" + jt;
+            var url = url1;
+            if(k == "1" ){
+              url = url2;
+            }
+            var res = [];
+            $.ajax({
+                type: "get",
+                url: url,
+                dataType: "json",
+                async : false,
+                cache:false,
+                timeout:3000,                    
+                success: function(data) {                    
+                    if(k == 0){
+                        var ts = data.data.timestamp;
+                        tt = getLocalTime(ts);
+                        dt = tt;                            
+                    }
+                    res = data;    
+                },
+                error: function() {
+                    console.error("获取板块列表失败");
+                }
+            });    
+            
+            var data1 = JSON.stringify(res)
+            data1 = data1.replace(/\\"/g,"").replace(/\\n/g,"").replace(/"id":-1,"name":"其他"/g,'"id":-2,"name":"其他"');
+            
+            // 生成板块列表
+            var sectorList = document.getElementById('sectorList');
+            sectorList.innerHTML = '';
+            
+            // 清空板块ID列表
+            allSectorIds = [];
+            
+            if(res.data && res.data.items) {
+                // 先清空板块指标数据
+                sectorMetrics = {};
+                
+                // 过滤ST股板块
+                const filteredItems = res.data.items.filter(item => {
+                    const name = item.name || '';
+                    // 排除名称包含ST或*ST的板块
+                    return !name.includes('ST') && !name.includes('*ST');
+                });
+                
+                // 确定要显示的板块数量
+                const displayCount = loadAllSectors ? filteredItems.length : Math.min(10, filteredItems.length);
+                
+                // 设置需要处理的总板块数
+                totalSectorsToProcess = displayCount;
+                processedSectorCount = 0;
+                
+                // 使用for循环替代forEach以兼容旧浏览器
+                for (var index = 0; index < displayCount; index++) {
+                    var item = filteredItems[index];
+                    // 存储板块ID用于自动加载
+                    allSectorIds.push(item.id);
+                    
+                    // 存储板块基本信息用于后续获取详细数据
+                    sectorMetrics[item.id] = {
+                        name: item.name,
+                        count: 0,
+                        change: item.change || 0, // 临时存储原始change值
+                        coreAvgPcp: null, // 核心平均涨跌幅（实际板块涨跌幅）
+                        limitUpCount: 0,
+                        description: item.description || '',
+                        reasonStats: {
+                            total: 0,
+                            withReason: 0
+                        },
+                        linkElement: null // 预留位置存储链接元素引用
+                    };
+                    
+                    var li = document.createElement('li');
+                    li.className = 'sector-item';
+                    
+                    var a = document.createElement('a');
+                    a.href = 'javascript:void(0);';
+                    a.className = 'sector-link';
+                    
+                    // 构建板块信息HTML - 第一行分为三列
+                    // 初始使用临时涨跌幅，后续会被core_avg_pcp替换
+                    var tempChange = item.change || 0;
+                    var changeClass = tempChange > 0 ? 'stock-up' : (tempChange < 0 ? 'stock-down' : 'stock-flat');
+                    var changeText = tempChange ? keepTwoDecimal(tempChange * 100) + '%' : '--';
+                    
+                    // 初始显示加载中，后续会通过fetchSectorDetails更新
+                    var limitUpText = '<span class="loading"></span>';
+                    
+                    // 只在有描述时显示描述区域
+                    var descHtml = item.description ? `<div class="sector-desc">${item.description}</div>` : '<div class="sector-desc"></div>';
+                    
+                    a.innerHTML = `
+                        <div class="sector-header">
+                            <span class="sector-name">${item.name}</span>
+                            <span class="sector-change ${changeClass}">${changeText}</span>
+                            <span class="sector-limit-up">${limitUpText}</span>
+                        </div>
+                        ${descHtml}
+                    `;
+                    
+                    // 闭包保存当前item引用
+                    (function(currentItem, currentLink) {
+                        a.onclick = function() {
+                            // 移除所有active类
+                            var links = document.querySelectorAll('.sector-link');
+                            for (var i = 0; i < links.length; i++) {
+                                links[i].classList.remove('active');
+                            }
+                            // 给当前点击的添加active类
+                            this.classList.add('active');
+                            
+                            // 更新右侧板块描述（橙色文本）
+                            var descriptionText = currentItem.name;
+                            if (currentItem.description) {
+                                descriptionText += " - " + currentItem.description;
+                            }
+                            // 移除涨跌幅信息
+                            document.getElementById('sectorDescription').textContent = descriptionText;
+                            
+                            // 加载板块详细数据
+                            loadSectorData(currentItem.id, true);
+                        };
+                        
+                        // 存储链接引用以便后续更新涨停数量和涨跌幅
+                        sectorMetrics[currentItem.id].linkElement = currentLink;
+                    })(item, a);
+                    
+                    li.appendChild(a);
+                    sectorList.appendChild(li);
+                    
+                    // 默认显示第一个板块的描述
+                    if(index === 0) {
+                        var descriptionText = item.name;
+                        if (item.description) {
+                            descriptionText += " - " + item.description;
+                        }
+                        document.getElementById('sectorDescription').textContent = descriptionText;
+                    }
+                }
+                
+                // 并行加载板块数据，控制并发数量
+                loadSectorLimitUpCounts();
+                
+                // 默认选中第一个
+                if(p == 0 && filteredItems.length > 0){
+                    var firstLink = document.querySelector('.sector-link');
+                    if(firstLink) firstLink.classList.add('active');
+                    
+                    dm = filteredItems[0].id;
+                    
+                    // 加载板块详细数据
+                    loadSectorData(dm, true);
+                }
+            } else {
+                console.error("没有获取到板块数据");
+            }
+        }
+        
+        /**
+         * 并行加载板块的涨停数，控制并发数量
+         */
+        function loadSectorLimitUpCounts() {
+            const concurrencyLimit = 3; // 控制并发数量，避免请求过多
+            const promises = [];
+            
+            // 按并发限制分组处理
+            for (let i = 0; i < allSectorIds.length; i += concurrencyLimit) {
+                const group = allSectorIds.slice(i, i + concurrencyLimit);
+                const groupPromises = group.map(sectorId => 
+                    loadSectorData(sectorId, false).catch(err => console.error(`加载板块 ${sectorId} 失败:`, err))
+                );
+                promises.push(...groupPromises);
+                
+                // 如果不是最后一组，添加延迟以避免请求过于集中
+                if (i + concurrencyLimit < allSectorIds.length) {
+                    promises.push(new Promise(resolve => setTimeout(resolve, 100)));
+                }
+            }
+            
+            // 等待所有请求完成
+            Promise.all(promises).then(() => {
+                console.log("所有板块数据加载完成");
+            });
+        }
+        
+        /**
+         * 获取涨停详情数据（涨停时间、连板数等）
+         */
+        function fetchLimitUpDetails(date) {
+            // 先检查缓存
+            const cacheKey = date;
+            if (limitUpDetailsCache.has(cacheKey)) {
+                return Promise.resolve(limitUpDetailsCache.get(cacheKey));
+            }
+            
+            return new Promise((resolve, reject) => {
+                // 格式化日期为YYYYMMDD格式
+                const formattedDate = date.replace(/-/g, '');
+                const url = `https://data.10jqka.com.cn/dataapi/limit_up/limit_up_pool?page=1&limit=200&field=199112%2C10%2C9001%2C330323%2C330324%2C330325%2C9002%2C330329%2C133971%2C133970%2C1968584%2C3475914%2C9003%2C9004%2Ccontinue_day%2Ccontinue_day_cnt%2Chigh_days%2Creason_type&filter=HS%2CGEM2STAR&order_field=330324&order_type=0&date=${formattedDate}`;
+                
+                $.ajax({
+                    type: "get",
+                    url: url,
+                    dataType: "json",
+                    async: true,
+                    cache: false,
+                    timeout: 5000,
+                    // 添加重试机制
+                    retry: 2,
+                    error: function(xhr, status, error) {
+                        const retryCount = this.retry || 0;
+                        if (retryCount > 0) {
+                            this.retry = retryCount - 1;
+                            setTimeout(() => $.ajax(this), 500);
+                        } else {
+                            console.error("获取涨停详情数据失败");
+                            resolve({}); // 错误时返回空对象，避免中断流程
+                        }
+                    },
+                    success: function(data) {
+                        const detailsMap = {};
+                        if (data && data.data && data.data.info) {
+                            data.data.info.forEach(item => {
+                                // 格式化涨停时间
+                                let formattedTime = item.last_limit_up_time 
+                                    ? new Date(item.last_limit_up_time * 1000).toLocaleTimeString('zh-CN', { 
+                                        hour12: false, 
+                                        hour: '2-digit', 
+                                        minute: '2-digit' 
+                                      }) 
+                                    : '';
+                                
+                                detailsMap[item.code] = {
+                                    limitUpTime: formattedTime,
+                                    reason: item.reason_type || '',
+                                    highDays: item.high_days || 0  // 连板数
+                                };
+                            });
+                        }
+                        // 存入缓存
+                        limitUpDetailsCache.set(cacheKey, detailsMap);
+                        resolve(detailsMap);
+                    }
+                });
+            });
+        }
+        
+        /**
+         * 获取领涨页数据
+         */
+        function fetchLeaderData(sectorId, date) {
+            return new Promise((resolve, reject) => {
+                var leaderUrl = k === 1 
+                    ? `https://flash-api.xuangubao.cn/api/surge_stock/stocks?date=${date.replace(/-/g,"")}&normal=true&uplimit=true`
+                    : `https://flash-api.xuangubao.cn/api/surge_stock/stocks?normal=true&uplimit=true`;
+                
+                $.ajax({
+                    type: "get",
+                    url: leaderUrl,
+                    dataType: "json",
+                    async: true,
+                    cache: false,
+                    timeout: 5000,
+                    // 添加重试机制
+                    retry: 2,
+                    error: function(xhr, status, error) {
+                        const retryCount = this.retry || 0;
+                        if (retryCount > 0) {
+                            this.retry = retryCount - 1;
+                            setTimeout(() => $.ajax(this), 500);
+                        } else {
+                            console.error("获取领涨页数据失败");
+                            reject([]);
+                        }
+                    },
+                    success: function(data) {
+                        const leaderStocks = [];
+                        if(data.data && data.data.items) {
+                            for (var i = 0; i < data.data.items.length; i++) {
+                                var item = data.data.items[i];
+                                var id = item[8] && item[8][0] ? item[8][0]["id"] : null;
+                                if(id == sectorId) {
+                                    const code = formatStockCode(item[0]);
+                                    leaderStocks.push({
+                                        symbol: code,
+                                        name: item[1],
+                                        price: item[2],
+                                        changePercent: item[3],
+                                        volume: item[4],
+                                        desc: item[5] || '',  // 领涨股票描述信息
+                                        lb: item.lb || '',    // 标签信息
+                                        source: 'leader'
+                                    });
+                                }
+                            }
+                        }
+                        resolve(leaderStocks);
+                    }
+                });
+            });
+        }
+        
+        /**
+         * 获取全部页数据
+         */
+        function fetchAllData(sectorId) {
+            return new Promise((resolve, reject) => {
+                var allUrl = `https://flash-api.xuangubao.cn/api/plate/plate_set?id=${sectorId}`;
+                
+                $.ajax({
+                    type: "get",
+                    url: allUrl,
+                    dataType: "json",
+                    async: true,
+                    cache: false,
+                    timeout: 5000,
+                    // 添加重试机制
+                    retry: 2,
+                    error: function(xhr, status, error) {
+                        const retryCount = this.retry || 0;
+                        if (retryCount > 0) {
+                            this.retry = retryCount - 1;
+                            setTimeout(() => $.ajax(this), 500);
+                        } else {
+                            console.error("获取板块全部数据失败");
+                            reject({ allStocks: [], coreAvgPcp: null });
+                        }
+                    },
+                    success: function(allData) {
+                        // 如果获取到core_avg_pcp，立即返回，用于后续更新
+                        const coreAvgPcp = allData.data && allData.data.core_avg_pcp !== undefined 
+                            ? allData.data.core_avg_pcp 
+                            : null;
+                            
+                        if(allData.data && allData.data.stocks) {
+                            // 提取股票代码列表
+                            var symbols = allData.data.stocks.map(stock => stock.symbol).join(",");
+                            
+                            // 获取全部股票的详细数据
+                            var stockDetailUrl = `https://flash-api.xuangubao.cn/api/stock/data?fields=symbol,stock_chi_name,change_percent,price,volume&strict=true&symbols=${symbols}`;
+                            
+                            $.ajax({
+                                type: "get",
+                                url: stockDetailUrl,
+                                dataType: "json",
+                                async: true,
+                                cache: false,
+                                timeout: 5000,
+                                // 添加重试机制
+                                retry: 2,
+                                error: function(xhr, status, error) {
+                                    const retryCount = this.retry || 0;
+                                    if (retryCount > 0) {
+                                        this.retry = retryCount - 1;
+                                        setTimeout(() => $.ajax(this), 500);
+                                    } else {
+                                        console.error("获取股票详细数据失败");
+                                        reject({ allStocks: [], coreAvgPcp });
+                                    }
+                                },
+                                success: function(stockDetailData) {
+                                    // 处理全部页数据
+                                    var allStocks = [];
+                                    var stockDescMap = {};
+                                    
+                                    // 先建立股票描述的映射
+                                    allData.data.stocks.forEach(stock => {
+                                        stockDescMap[stock.symbol] = stock.desc || '';
+                                    });
+                                    
+                                    // 处理详细数据
+                                    if(stockDetailData.data) {
+                                        for(var symbol in stockDetailData.data) {
+                                            var stockData = stockDetailData.data[symbol];
+                                            const code = formatStockCode(symbol);
+                                            
+                                            allStocks.push({
+                                                symbol: code,
+                                                name: stockData.stock_chi_name || '',
+                                                price: stockData.price || 0,
+                                                changePercent: stockData.change_percent || 0,
+                                                volume: stockData.volume || 0,
+                                                desc: stockDescMap[symbol] || '',  // 股票描述信息
+                                                source: 'all'
+                                            });
+                                        }
+                                    }
+                                    
+                                    resolve({ allStocks, coreAvgPcp });
+                                }
+                            });
+                        } else {
+                            console.error("获取全部股票数据失败");
+                            reject({ allStocks: [], coreAvgPcp });
+                        }
+                    }
+                });
+            });
+        }
+        
+        /**
+         * 过滤无关标签（仅用于显示，不影响涨停判断）
+         */
+        function filterIrrelevantTags(lbStr) {
+            if (!lbStr || typeof lbStr !== 'string') {
+                return [];
+            }
+            
+            // 分割标签
+            const allTags = lbStr.split(',').map(tag => tag.trim()).filter(tag => tag);
+            
+            // 过滤无关标签
+            return allTags.filter(tag => 
+                !UNRELATED_TAGS.some(unrelated => tag.includes(unrelated))
+            );
+        }
+        
+        /**
+         * 涨停判断逻辑 - 基于涨停原因列是否有数据
+         */
+        function isAccurateLimitUp(stock) {
+            // 涨停原因列有数据且不为空，视为涨停股
+            return (stock.limitUpReason && stock.limitUpReason.trim() !== '');
+        }
+        
+        /**
+         * 更新股票详情描述的函数 - updatel函数
+         * 整合股票的多种信息生成详细描述
+         */
+        function updatel(stock) {
+            // 收集相关信息
+            const tags = filterIrrelevantTags(stock.lb);
+            let descriptionParts = [];
+            
+            // 添加描述信息
+            if (stock.desc && stock.desc.trim()) {
+                descriptionParts.push(stock.desc.trim());
+            }
+            
+            // 添加涨停原因（如果有）
+            if (stock.limitUpReason && stock.limitUpReason.trim()) {
+                descriptionParts.push(`[${stock.limitUpReason}]`);
+            } 
+            // 否则添加标签信息
+            else if (tags.length > 0) {
+                descriptionParts.push(`[${tags.join(',')}]`);
+            }
+            
+            // 添加涨停信息
+            if (isAccurateLimitUp(stock) && stock.highDays > 0) {
+                descriptionParts.push(`连续${stock.highDays}天涨停`);
+            }
+            
+            // 如果没有任何描述信息
+            if (descriptionParts.length === 0) {
+                return '无详细信息';
+            }
+            
+            // 组合所有信息
+            return descriptionParts.join(' ');
+        }
+        
+        /**
+         * 基于领涨页数据计算板块涨幅
+         */
+        function calculateSectorChangeFromLeader(leaderStocks) {
+            if (!leaderStocks || leaderStocks.length === 0) {
+                return null;
+            }
+            
+            // 计算平均涨跌幅
+            const sumChange = leaderStocks.reduce((sum, stock) => sum + (stock.changePercent || 0), 0);
+            return sumChange / leaderStocks.length;
+        }
+        
+        /**
+         * 加载板块详细数据：并行加载领涨页、全部页和涨停详情数据
+         * @param {number} sectorId - 板块ID
+         * @param {boolean} renderTable - 是否渲染表格，true为渲染，false仅更新涨停数
+         * @returns {Promise} 表示数据加载完成的Promise
+         */
+        function loadSectorData(sectorId, renderTable = true) {
+            // 检查缓存
+            const cacheKey = `${tt}-${sectorId}`;
+            if (sectorDataCache.has(cacheKey)) {
+                const cachedData = sectorDataCache.get(cacheKey);
+                
+                // 恢复全局数据
+                globalSectorData.leaderStocks = cachedData.leaderStocks;
+                globalSectorData.allStocks = cachedData.allStocks;
+                globalSectorData.limitUpDetails = cachedData.limitUpDetails;
+                globalSectorData.stocks = cachedData.stocks;
+                globalSectorData.totalStockCount = cachedData.totalStockCount;
+                globalSectorData.leaderOnlyCount = cachedData.leaderOnlyCount;
+                
+                // 更新板块数据
+                sectorMetrics[sectorId].coreAvgPcp = cachedData.coreAvgPcp;
+                updateSectorChangeDisplay(sectorId);
+                updateSectorLimitUpCount(sectorId, renderTable);
+                
+                return Promise.resolve();
+            }
+            
+            return new Promise((resolve, reject) => {
+                // 如果需要渲染表格，显示加载状态
+                if (renderTable) {
+                    var contentArea = document.getElementById('contentArea');
+                    contentArea.innerHTML = `<div style="text-align: center; padding: 20px;"><span class="loading"></span>加载中...</div>`;
+                }
+                
+                // 并行加载三个数据源
+                Promise.all([
+                    fetchLeaderData(sectorId, tt),
+                    fetchAllData(sectorId),
+                    fetchLimitUpDetails(tt)
+                ]).then(([leaderStocks, allDataResult, limitUpDetails]) => {
+                    // 提取全部页数据和coreAvgPcp
+                    const { allStocks, coreAvgPcp } = allDataResult;
+                    
+                    // 1. 基于领涨页数据提前计算并更新板块涨幅
+                    const leaderBasedChange = calculateSectorChangeFromLeader(leaderStocks);
+                    
+                    // 更新板块涨跌幅数据
+                    let finalCoreAvgPcp = coreAvgPcp !== null ? coreAvgPcp : 
+                                         (leaderBasedChange !== null ? leaderBasedChange : null);
+                    
+                    sectorMetrics[sectorId].coreAvgPcp = finalCoreAvgPcp;
+                    
+                    // 立即更新板块涨幅显示
+                    updateSectorChangeDisplay(sectorId);
+                    
+                    // 2. 合并数据（取并集）并处理
+                    const mergedStocks = mergeAndProcessData(leaderStocks, allStocks, limitUpDetails);
+                    
+                    // 3. 保存数据到全局变量
+                    globalSectorData.leaderStocks = leaderStocks;
+                    globalSectorData.allStocks = allStocks;
+                    globalSectorData.limitUpDetails = limitUpDetails;
+                    globalSectorData.stocks = mergedStocks;
+                    globalSectorData.totalStockCount = mergedStocks.length;
+                    globalSectorData.leaderOnlyCount = mergedStocks.filter(s => s.isLeaderOnly).length;
+                    
+                    // 存入缓存
+                    sectorDataCache.set(cacheKey, {
+                        leaderStocks,
+                        allStocks,
+                        limitUpDetails,
+                        stocks: mergedStocks,
+                        totalStockCount: mergedStocks.length,
+                        leaderOnlyCount: globalSectorData.leaderOnlyCount,
+                        coreAvgPcp: finalCoreAvgPcp
+                    });
+                    
+                    // 4. 更新板块涨停数量统计
+                    updateSectorLimitUpCount(sectorId, renderTable);
+                    
+                    resolve();
+                }).catch((error) => {
+                    console.error("数据加载失败:", error);
+                    // 即使失败也计数，避免无限等待
+                    processedSectorCount++;
+                    if (renderTable) {
+                        var contentArea = document.getElementById('contentArea');
+                        contentArea.innerHTML = '<div style="text-align: center; padding: 20px;">数据加载失败</div>';
+                    }
+                    reject(error);
+                });
+            });
+        }
+        
+        /**
+         * 合并数据（取并集）并处理
+         */
+        function mergeAndProcessData(leaderStocks, allStocks, limitUpDetails) {
+            // 1. 创建全部页股票的映射（以股票代码为键）
+            const allStockMap = new Map();
+            allStocks.forEach(stock => {
+                const symbol = formatStockCode(stock.symbol);
+                allStockMap.set(symbol, stock);
+            });
+            
+            // 2. 创建领涨页股票的映射（以股票代码为键）
+            const leaderStockMap = new Map();
+            leaderStocks.forEach(stock => {
+                const symbol = formatStockCode(stock.symbol);
+                leaderStockMap.set(symbol, stock);
+            });
+            
+            // 3. 合并数据（取并集）
+            const mergedStocks = [];
+            const processedSymbols = new Set(); // 用于记录已处理的股票代码，避免重复
+            
+            // 先添加全部页的股票
+            allStockMap.forEach((allStock, symbol) => {
+                // 检查领涨页是否有该股票
+                const leaderStock = leaderStockMap.get(symbol);
+                
+                // 合并数据：领涨页数据优先（更及时）
+                const finalStock = leaderStock ? { 
+                    ...allStock, 
+                    ...leaderStock
+                } : allStock;
+                
+                // 获取涨停详情
+                const limitUpInfo = limitUpDetails[symbol] || {};
+                
+                // 过滤标签（仅用于显示）
+                const filteredTags = filterIrrelevantTags(finalStock.lb);
+                
+                // 涨跌颜色类
+                const changeClass = finalStock.changePercent > 0 ? 'stock-up' : 
+                                  (finalStock.changePercent < 0 ? 'stock-down' : 'stock-flat');
+                
+                mergedStocks.push({
+                    ...finalStock,
+                    limitUpTime: limitUpInfo.limitUpTime || '',
+                    limitUpReason: limitUpInfo.reason || '',
+                    highDays: limitUpInfo.highDays || 0,
+                    filteredTags: filteredTags,
+                    changeClass: changeClass,
+                    zf: keepTwoDecimal(finalStock.changePercent * 100),
+                    isLeaderOnly: false
+                });
+                
+                processedSymbols.add(symbol);
+            });
+            
+            // 再添加领涨页独有的股票（即不在全部页中的股票）
+            leaderStockMap.forEach((leaderStock, symbol) => {
+                if (!processedSymbols.has(symbol)) {
+                    // 获取涨停详情
+                    const limitUpInfo = limitUpDetails[symbol] || {};
+                    
+                    // 过滤标签（仅用于显示）
+                    const filteredTags = filterIrrelevantTags(leaderStock.lb);
+                    
+                    const changeClass = leaderStock.changePercent > 0 ? 'stock-up' : 
+                                      (leaderStock.changePercent < 0 ? 'stock-down' : 'stock-flat');
+                    
+                    mergedStocks.push({
+                        ...leaderStock,
+                        limitUpTime: limitUpInfo.limitUpTime || '',
+                        limitUpReason: limitUpInfo.reason || '',
+                        highDays: limitUpInfo.highDays || 0,
+                        filteredTags: filteredTags,
+                        changeClass: changeClass,
+                        zf: keepTwoDecimal(leaderStock.changePercent * 100),
+                        isLeaderOnly: true
+                    });
+                    
+                    processedSymbols.add(symbol);
+                }
+            });
+            
+            // 4. 按新的排序规则排序：优先按涨停时间，再按涨幅排序
+            mergedStocks.sort((a, b) => {
+                // 有涨停时间的排在前面
+                if (a.limitUpTime && !b.limitUpTime) return -1;
+                if (!a.limitUpTime && b.limitUpTime) return 1;
+                
+                // 都有涨停时间的按时间先后排序（早涨停的在前）
+                if (a.limitUpTime && b.limitUpTime) {
+                    if (a.limitUpTime < b.limitUpTime) return -1;
+                    if (a.limitUpTime > b.limitUpTime) return 1;
+                }
+                
+                // 涨停时间相同或都没有涨停时间的，按涨跌幅降序
+                return b.zf - a.zf || b.highDays - a.highDays;
+            });
+            
+            return mergedStocks;
+        }
+        
+        /**
+         * 更新板块卡片第一行第二列的涨跌幅数据
+         */
+        function updateSectorChangeDisplay(sectorId) {
+            const metric = sectorMetrics[sectorId];
+            if (metric && metric.linkElement && metric.coreAvgPcp !== null) {
+                // 获取涨跌幅显示元素
+                const changeElement = metric.linkElement.querySelector('.sector-change');
+                if (changeElement) {
+                    // 计算百分比并保留两位小数
+                    const percentage = (metric.coreAvgPcp * 100).toFixed(2);
+                    
+                    // 更新涨跌幅文本
+                    changeElement.textContent = `${percentage}%`;
+                    
+                    // 更新涨跌颜色类
+                    changeElement.className = 'sector-change ' + 
+                        (metric.coreAvgPcp > 0 ? 'stock-up' : 
+                         metric.coreAvgPcp < 0 ? 'stock-down' : 'stock-flat');
+                }
+                
+                // 更新顶部导航栏的涨跌幅信息（已移除）
+                const activeLink = document.querySelector('.sector-link.active');
+                if (activeLink && activeLink === metric.linkElement) {
+                    var descriptionText = metric.name;
+                    if (metric.description) {
+                        descriptionText += " - " + metric.description;
+                    }
+                    document.getElementById('sectorDescription').textContent = descriptionText;
+                }
+            }
+        }
+        
+        /**
+         * 独立的板块涨停数量统计函数
+         */
+        function updateSectorLimitUpCount(sectorId, renderTable) {
+            if(sectorMetrics[sectorId]) {
+                var displayedStocks = getTop30Stocks();
+                
+                // 统计涨停原因有数据的股票数量
+                var withReasonCount = displayedStocks.filter(s => isAccurateLimitUp(s)).length;
+                
+                // 更新板块统计信息
+                sectorMetrics[sectorId].reasonStats.total = displayedStocks.length;
+                sectorMetrics[sectorId].reasonStats.withReason = withReasonCount;
+                sectorMetrics[sectorId].limitUpCount = withReasonCount;
+                
+                // 递增已处理板块计数器
+                processedSectorCount++;
+                
+                // 只要当前板块处理完成就更新显示
+                updateSectorLimitUpDisplay(sectorId);
+                
+                // 更新总涨停数统计
+                updateTotalLimitUpCount();
+                
+                // 如果需要，渲染表格
+                if (renderTable) {
+                    renderStockTable();
+                    // 表格渲染后应用列设置
+                    updateTableColumns();
+                }
+            }
+        }
+        
+        /**
+         * 批量更新DOM的函数 - 减少重绘重排
+         */
+        function batchUpdateDom(updates) {
+            // 使用文档片段减少DOM重绘
+            const fragment = document.createDocumentFragment();
+            
+            updates.forEach(update => {
+                const element = document.querySelector(update.selector);
+                if (element) {
+                    // 克隆元素进行修改
+                    const clone = element.cloneNode(true);
+                    clone.innerHTML = update.content;
+                    fragment.appendChild(clone);
+                    
+                    // 替换原始元素
+                    element.parentNode.replaceChild(clone, element);
+                }
+            });
+        }
+        
+        /**
+         * 独立的板块涨停数量显示更新函数
+         */
+        function updateSectorLimitUpDisplay(sectorId) {
+            var linkElement = sectorMetrics[sectorId].linkElement;
+            if (linkElement) {
+                var limitUpElement = linkElement.querySelector('.sector-limit-up');
+                if (limitUpElement) {
+                    // 显示涨停原因有数据的股票数量
+                    limitUpElement.innerHTML = `${sectorMetrics[sectorId].limitUpCount}家`;
+                }
+            }
+        }
+        
+        /**
+         * 更新所有板块的总涨停数统计
+         */
+        function updateTotalLimitUpCount() {
+            let total = 0;
+            for (var sectorId in sectorMetrics) {
+                total += sectorMetrics[sectorId].limitUpCount || 0;
+            }
+            
+            // 更新显示
+            const totalLimitUpElement = document.getElementById('totalLimitUpCount');
+            totalLimitUpElement.innerHTML = total.toString();
+        }
+        
+        /**
+         * 获取前30的股票（按新的排序规则）
+         */
+        function getTop30Stocks() {
+            let stocks = [...globalSectorData.stocks];
+            
+            // 已在mergeAndProcessData中按新规则排序，这里直接取前30
+            return stocks.slice(0, 30);
+        }
+
+        /**
+         * 应用筛选但仍限制在30只内
+         */
+        function getFilteredTop30Stocks() {
+            // 不应用任何筛选，直接返回前30
+            return getTop30Stocks();
+        }
+        
+        /**
+         * 更新统计信息（基于涨停原因是否有数据）
+         */
+        function updateStats() {
+            const displayedStocks = getTop30Stocks();
+            
+            // 统计涨停原因有数据的股票数量
+            const top30LimitUpCount = displayedStocks.filter(s => isAccurateLimitUp(s)).length;
+            
+            // 更新统计显示
+            document.getElementById('totalStockCount').textContent = displayedStocks.length;
+            document.getElementById('totalLimitUpCount').textContent = top30LimitUpCount;
+        }
+        
+        /**
+         * 渲染股票表格 - 精简列并优化布局
+         */
+        function renderStockTable() {
+            const contentArea = document.getElementById('contentArea');
+            const stocks = getTop30Stocks();
+            
+            // 创建表格容器
+            const tableContainer = document.createElement('div');
+            tableContainer.className = 'table-wrapper';
+            
+            // 创建表格
+            const table = document.createElement('table');
+            table.className = 'stocks-table';
+            
+            // 创建表头 - 精简列，移除领涨描述列，"名称"列不再有特殊样式
+            const thead = document.createElement('thead');
+            thead.innerHTML = `
+                <tr>
+                    <th class="code-col">代码</th>
+                    <th class="name-col">名称</th>
+                    <th class="high-days-col">连板数</th>
+                    <th class="reason-type-col">涨停原因</th>
+                    <th class="limit-up-time-col">涨停时间</th>
+                    <th class="price-col">价格</th>
+                    <th class="change-col">涨跌幅</th>
+                    <th class="volume-col">成交量</th>
+                </tr>
+            `;
+            table.appendChild(thead);
+            
+            // 创建表格主体
+            const tbody = document.createElement('tbody');
+            
+            if(stocks.length === 0) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = `<td colspan="${getVisibleColumnCount()}" style="text-align: center; padding: 20px;">暂无数据</td>`;
+                tbody.appendChild(emptyRow);
+            } else {
+                stocks.forEach(stock => {
+                    // 格式化成交量
+                    const volumeText = formatVolume(stock.volume);
+                    
+                    // 创建行元素
+                    const row = document.createElement('tr');
+                    // 为涨停原因有数据的行添加特殊类
+                    if (isAccurateLimitUp(stock)) {
+                        row.classList.add('limit-up-row');
+                    }
+                    
+                    // 生成唯一ID用于子行关联
+                    const rowId = `stock-row-${stock.symbol}`;
+                    row.id = rowId;
+                    
+                    // 添加点击事件，先跳转，延迟100ms后展开子行
+                    row.addEventListener('click', (e) => {
+                        // 收起所有已展开的子行
+                        document.querySelectorAll('.sub-row').forEach(sub => {
+                            sub.style.display = 'none';
+                        });
+                        
+                        // 执行跳转
+                        const link = `http://www.treeid/code_${stock.symbol}`;
+                        window.location.href = link;
+                        
+                        // 延迟100ms后展开当前子行
+                        setTimeout(() => {
+                            const subRow = document.getElementById(`sub-${rowId}`);
+                            if (subRow) {
+                                subRow.style.display = 'table-row';
+                            }
+                        }, 100);
+                        
+                        e.stopPropagation();
+                    });
+                    
+                    // 检查是否为高连板股（>3天）
+                    const highDaysClass = stock.highDays > 3 ? 'high连板' : '';
+                    
+                    // 检查是否为早盘涨停（9:30-10:00），但不添加下划线
+                    let morningLimitUpClass = '';
+                    if (stock.limitUpTime) {
+                        const hour = parseInt(stock.limitUpTime.split(':')[0]);
+                        const minute = parseInt(stock.limitUpTime.split(':')[1]);
+                        if (hour === 9 && minute >= 30 && minute <= 59) {
+                            morningLimitUpClass = 'morning';
+                        } else if (hour === 10 && minute === 0) {
+                            morningLimitUpClass = 'morning';
+                        }
+                    }
+                    
+                    // 检查是否为大幅波动（涨跌幅>5%）
+                    const largeMoveClass = Math.abs(stock.zf) > 5 ? 'large-move' : '';
+                    
+                    // 连板数显示（添加三角符号）
+                    const highDaysDisplay = stock.highDays > 1 ? 
+                        `<span class="▲">▲${stock.highDays || 0}</span>` : 
+                        (stock.highDays || 0);
+                    
+                    // 股票数据行 - 精简列，移除领涨描述列
+                    row.innerHTML = `
+                        <td class="code-col">${stock.symbol}</td>
+                        <td class="name-col">${stock.name}</td>
+                        <td class="high-days-col ${highDaysClass}">${highDaysDisplay}</td>
+                        <td class="reason-type-col">${stock.limitUpReason || '-'}</td>
+                        <td class="limit-up-time-col ${isAccurateLimitUp(stock) ? 'stock-up' : ''} ${morningLimitUpClass}">${stock.limitUpTime || '-'}</td>
+                        <td class="price-col">${stock.price ? stock.price.toFixed(2) : '0.00'}</td>
+                        <td class="change-col ${stock.changeClass} ${largeMoveClass}">${stock.zf}%</td>
+                        <td class="volume-col">${volumeText}</td>
+                    `;
+                    
+                    // 创建子行用于显示领涨描述，使用动态colspan
+                    const subRow = document.createElement('tr');
+                    subRow.id = `sub-${rowId}`;
+                    subRow.className = 'sub-row';
+                    subRow.style.display = 'none';
+                    
+                    // 生成领涨描述内容
+                    const description = updatel(stock);
+                    
+                    // 使用当前可见列数作为colspan值
+                    subRow.innerHTML = `
+                        <td colspan="${getVisibleColumnCount()}">
+                            <div class="sub-row-content">${description}</div>
+                        </td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                    tbody.appendChild(subRow);
+                });
+            }
+            
+            table.appendChild(tbody);
+            tableContainer.appendChild(table);
+            
+            // 更新内容区域
+            contentArea.innerHTML = '';
+            contentArea.appendChild(tableContainer);
+            
+            // 更新统计
+            updateStats();
+        }
+        
+        /**
+         * 格式化成交量显示
+         */
+        function formatVolume(volume) {
+            if (!volume) return "0";
+            if (volume >= 10000) {
+                return (volume / 10000).toFixed(1) + "万";
+            }
+            return volume.toString();
+        }
+    </script>
+</body></html>

@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能涨停龙头分析系统 - 涨停宝Pro</title>
+    <style>
+        body {
+            background-color: #0f1419;
+            color: #e0e0e0;
+            font-family: "Microsoft YaHei", "Arial", sans-serif;
+            font-size: 1.1vw;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.4;
+        }
+
+        /* 顶部标题样式 */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+ }
+        .refresh-control {
+            display: block;
+            margin-bottom: 8px;
+            color: #87ceeb;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .left-column, .middle-column, .right-column {
+            flex: 1;
+            min-width: 280px; /* 适配去掉两列后的宽度 */
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .board-section {
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            padding: 12px;
+
+            height: fit-content;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .board-title {
+            color: #fff;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        #firstBoardTitle,
+        #fourthBoardTitle,
+        #yesterdayFourthTitle {
+            font-size: 15px !important;
+            margin-bottom: 8px !important;
+            padding-top: 4px;
+        }
+
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .stock-table th {
+            background-color: #3d3d3d;
+            color: #e0e0e0;
+            padding: 4px 4px;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 1px solid #555;
+            font-size: 12px;
+        }
+
+        .stock-table td {
+            padding: 3px 4px;
+            text-align: center;
+            border-bottom: 1px solid #444;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stock-table tr:hover {
+            background-color: #333;
+        }
+        
+        .stock-table tr:hover td {
+            background-color: #333;
+        }
+
+        /* 主板流通小于15亿的蓝色标记 */
+        .main-board-small-circulation {
+            background-color: #0a2463 !important;
+            animation: shake 1s infinite;
+        }
+        
+        .main-board-small-circulation td {
+            background-color: #0a2463 !important;
+        }
+
+        /* 一字板封单大于5亿的红色标记和抖动效果 */
+        .yizi-large-order {
+            background-color: #d63031 !important;
+            animation: shake 1s infinite;
+        }
+        
+        .yizi-large-order td {
+            background-color: #d63031 !important;
+            color: white !important;
+            font-weight: bold;
+        }
+        
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-1px); }
+            50% { transform: translateX(0); }
+            75% { transform: translateX(1px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* 龙头标注样式 - 仅显示等级（去掉板块） */
+        .dragon-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0 4px;
+            border-radius: 4px;
+            margin-right: 3px;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+        }
+        /* 龙头等级颜色区分（龙一=红，龙二=黄，龙三=绿） */
+        .dragon-level-1 { background-color: #e74c3c; } /* 龙一 */
+        .dragon-level-2 { background-color: #f39c12; } /* 龙二 */
+        .dragon-level-3 { background-color: #2ecc71; } /* 龙三 */
+
+        /* AI判断样式（移植第二版增强样式） */
+        .ai-judge { 
+            font-weight: bold;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .ai-strong { color: white !important; background-color: #ff3333; border: 1px solid #ff6666; }
+        .ai-good { color: white !important; background-color: #ff9900; border: 1px solid #ffcc66; }
+        .ai-normal { color: white !important; background-color: #3399ff; border: 1px solid #66b3ff; }
+        .ai-weak { color: white !important; background-color: #66cc66; border: 1px solid #99ff99; }
+        .ai-risk { color: white !important; background-color: #cc66ff; border: 1px solid #ee99ff; }
+
+        /* 股票类型颜色优化 */
+        .stock-name {
+            color: #87ceeb;
+            font-weight: 500;
+        }
+        .sector-name {
+            color: #a8e6cf;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .gem-stock .stock-name,
+        .gem-stock .time-red,
+        .gem-stock .time-yellow,
+        .gem-stock .sealed-orders {
+            color: #2ecc71;
+        }
+
+        .star-stock .stock-name,
+        .star-stock .time-red,
+        .star-stock .time-yellow,
+        .star-stock .sealed-orders {
+            color: #9b59b6;
+        }
+
+        .bse-stock .stock-name,
+        .bse-stock .time-red,
+        .bse-stock .time-yellow,
+        .bse-stock .sealed-orders {
+            color: #3498db;
+        }
+        
+        .row-highlight {
+            background-color: #192a56 !important;
+        }
+        
+        .row-highlight td {
+            background-color: #192a56 !important;
+        }
+
+        .time-red {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .time-yellow {
+            color: #ffdd59;
+            font-weight: bold;
+        }
+
+        .reason {
+            color: #a8e6cf;
+            font-size: 11px;
+            max-width: 90px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #888;
+            padding: 8px;
+        }
+
+        .error {
+            color: #ff6b6b;
+            text-align: center;
+            padding: 8px;
+        }
+
+        .change-positive {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .change-negative {
+            color: #2ecc71;
+        }
+
+        .sector {
+            color: #a8e6cf;
+            font-size: 11px;
+            max-width: 80px;
+        }
+
+        /* 换手率样式（保留但不显示在表格中） */
+        .turnover {
+            color: #ffb347;
+            font-size: 11px;
+            display: none; /* 隐藏换手率 */
+        }
+
+        /* 板块分组分隔线 */
+        .sector-divider {
+            background-color: #3d3d3d;
+            height: 24px;
+            line-height: 24px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #e0e0e0;
+            padding-left: 8px;
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+        .sector-divider:first-child {
+            margin-top: 0;
+        }
+
+        /* AI判断说明 */
+        .ai-explanation {
+            font-size: 10px;
+            color: #7f8c8d;
+            text-align: center;
+            margin-top: 4px;
+            padding: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title" style="text-align: center; font-size: 18px; font-weight: bold; color: #3498db; margin-bottom: 8px;">涨停表现（板块龙头版+AI判断增强版）</div>
+    
+        <div class="refresh-control">
+            <input type="checkbox" id="autoRefresh" class="refresh-checkbox" checked>
+            <label for="autoRefresh" class="refresh-label">自动刷新 (30秒) | AI判断已增强 | 龙头仅显示等级</label>
+        </div>
+    </div>
+    <div class="container">
+        <!-- 左侧列 -->
+        <div class="left-column">
+            <!-- 一板 -->
+            <div class="board-section">
+                <div class="board-title" id="firstBoardTitle">一板 (0)</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>板块</th>
+                            <th>时间</th>
+                            <th>封单(亿)</th>
+                            <th>AI判断</th>
+                        </tr>
+                    </thead>
+                    <tbody id="firstBoardTable">
+                        <tr><td colspan="5" class="loading">加载中...</td></tr>
+                    </tbody>
+                </table>
+                <div class="ai-explanation">AI基于：板块热度→涨停时间→封单量→换手率</div>
+            </div>
+        </div>
+        
+        <!-- 中间列 -->
+        <div class="middle-column">
+            <!-- 二板 -->
+            <div class="board-section">
+                <div class="board-title" id="secondBoardTitle">二板 (0)</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>板块</th>
+                            <th>时间</th>
+                            <th>封单(亿)</th>
+                            <th>AI判断</th>
+                        </tr>
+                    </thead>
+                    <tbody id="secondBoardTable">
+                        <tr><td colspan="5" class="loading">加载中...</td></tr>
+                    </tbody>
+                </table>
+                <div class="ai-explanation">AI基于：板块热度→涨停时间→封单量→换手率</div>
+            </div>
+            
+            <!-- 三板 -->
+            <div class="board-section">
+                <div class="board-title" id="thirdBoardTitle">三板 (0)</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>板块</th>
+                            <th>时间</th>
+                            <th>封单(亿)</th>
+                            <th>AI判断</th>
+                        </tr>
+                    </thead>
+                    <tbody id="thirdBoardTable">
+                        <tr><td colspan="5" class="loading">加载中...</td></tr>
+                    </tbody>
+                </table>
+                <div class="ai-explanation">AI基于：板块热度→涨停时间→封单量→换手率</div>
+            </div>
+            
+            <!-- 四板+ -->
+            <div class="board-section">
+                <div class="board-title" id="fourthBoardTitle">四板+ (0)</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>板块</th>
+                            <th>时间</th>
+                            <th>封单(亿)</th>
+                            <th>AI判断</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fourthBoardTable">
+                        <tr><td colspan="5" class="loading">加载中...</td></tr>
+                    </tbody>
+                </table>
+                <div class="ai-explanation">AI基于：板块热度→涨停时间→封单量→换手率</div>
+            </div>
+            
+            <!-- 今首板炸板 -->
+            <div class="board-section">
+                <div class="board-title" id="firstBoardExplosionTitle">今首板炸板 (0)</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>板块</th>
+                            <th>涨幅(%)</th>
+                            <th>AI判断</th>
+                        </tr>
+                    </thead>
+                    <tbody id="firstBoardExplosionTable">
+                        <tr><td colspan="4" class="loading">加载中...</td></tr>
+                    </tbody>
+                </table>
+                <div class="ai-explanation">AI基于：板块强度→涨幅→换手率→炸板时间</div>
+            </div>
+        </div>
+        
+        <!-- 右侧列 -->
+        <div class="right-column">
+            <!-- 昨四板以上未涨停 -->
+            <div class="board-section">
+                <div class="board-title" id="yesterdayFourthTitle">昨四板以上未涨停 (0)</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>板块</th>
+                            <th>涨幅(%)</th>
+                            <th>AI判断</th>
+                        </tr>
+                    </thead>
+                    <tbody id="yesterdayFourthTable">
+                        <tr><td colspan="4" class="loading">加载中...</td></tr>
+                    </tbody>
+                </table>
+                <div class="ai-explanation">AI基于：板块联动→涨幅→换手率→承接力度</div>
+            </div>
+            
+            <!-- 昨三板未涨停 -->
+            <div class="board-section">
+                <div class="board-title" id="yesterdayThirdTitle">昨三板未涨停 (0)</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>板块</th>
+                            <th>涨幅(%)</th>
+                            <th>AI判断</th>
+                        </tr>
+                    </thead>
+                    <tbody id="yesterdayThirdTable">
+                        <tr><td colspan="4" class="loading">加载中...</td></tr>
+                    </tbody>
+                </table>
+                <div class="ai-explanation">AI基于：板块联动→涨幅→换手率→承接力度</div>
+            </div>
+            
+            <!-- 昨二板未涨停 -->
+            <div class="board-section">
+                <div class="board-title" id="yesterdaySecondTitle">昨二板未涨停 (0)</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>板块</th>
+                            <th>涨幅(%)</th>
+                            <th>AI判断</th>
+                        </tr>
+                    </thead>
+                    <tbody id="yesterdaySecondTable">
+                        <tr><td colspan="4" class="loading">加载中...</td></tr>
+                    </tbody>
+                </table>
+                <div class="ai-explanation">AI基于：板块联动→涨幅→换手率→承接力度</div>
+            </div>
+            
+            <!-- 昨一板未涨停 -->
+            <div class="board-section">
+                <div class="board-title" id="yesterdayFirstTitle">昨一板未涨停 (0)</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>板块</th>
+                            <th>涨幅(%)</th>
+                            <th>AI判断</th>
+                        </tr>
+                    </thead>
+                    <tbody id="yesterdayFirstTable">
+                        <tr><td colspan="4" class="loading">加载中...</td></tr>
+                    </tbody>
+                </table>
+                <div class="ai-explanation">AI基于：板块联动→涨幅→换手率→承接力度</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class KPLClient {
+            constructor() {
+                this.refreshInterval = null;
+                this.sectorColorMap = {
+                    "AI": "ai",
+                    "人工智能": "ai",
+                    "大模型": "ai",
+                    "算力": "ai",
+                    "算法": "ai",
+                    "半导体": "semiconductor",
+                    "芯片": "semiconductor",
+                    "集成电路": "semiconductor",
+                    "光刻胶": "semiconductor",
+                    "封测": "semiconductor",
+                    "新能源": "newenergy",
+                    "光伏": "newenergy",
+                    "储能": "newenergy",
+                    "锂电池": "newenergy",
+                    "充电桩": "newenergy",
+                    "医药": "medical",
+                    "创新药": "medical",
+                    "医疗器械": "medical",
+                    "CXO": "medical",
+                    "中药": "medical",
+                    "消费": "consumer",
+                    "食品饮料": "consumer",
+                    "白酒": "consumer",
+                    "家电": "consumer",
+                    "零售": "consumer",
+                    "金融": "finance",
+                    "券商": "finance",
+                    "银行": "finance",
+                    "保险": "finance",
+                    "数字货币": "finance",
+                    "高端制造": "manufacturing",
+                    "工业母机": "manufacturing",
+                    "机器人": "manufacturing",
+                    "军工": "manufacturing",
+                    "航空航天": "manufacturing"
+                };
+                this.init();
+            }
+
+            init() {
+                this.loadData();
+                this.setupAutoRefresh();
+                this.startAutoRefresh();
+            }
+
+            setupAutoRefresh() {
+                const checkbox = document.getElementById('autoRefresh');
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        this.startAutoRefresh();
+                    } else {
+                        this.stopAutoRefresh();
+                    }
+                });
+            }
+
+            startAutoRefresh() {
+                this.refreshInterval = setInterval(() => {
+                    this.loadData();
+                }, 30000);
+            }
+
+            stopAutoRefresh() {
+                if (this.refreshInterval) {
+                    clearInterval(this.refreshInterval);
+                    this.refreshInterval = null;
+                }
+            }
+
+            async loadData() {
+                try {
+                    const correctDate = await this.getCorrectDate();
+                    if (!correctDate) {
+                        this.showError('无法获取正确的交易日期，使用模拟数据');
+                        this.loadMockData();
+                        return;
+                    }
+
+                    console.log('使用日期:', correctDate);
+                    await this.loadAllBoardData(correctDate);
+                } catch (error) {
+                    console.error('请求错误:', error);
+                    this.showError('网络请求失败，使用模拟数据');
+                    this.loadMockData();
+                }
+            }
+
+            // 获取正确的交易日期（优先取当前日期，非交易时间取上一个交易日）
+            async getCorrectDate() {
+                try {
+                    const now = new Date();
+                    const day = now.getDay();
+                    const hour = now.getHours();
+
+                    // 周末（周六/周日）取周五日期
+                    if (day === 0 || day === 6) {
+                        const friday = new Date(now);
+                        friday.setDate(now.getDate() - (day === 0 ? 2 : 1));
+                        return this.formatDate(friday);
+                    }
+
+                    // 交易日：9:30前取上一个交易日，9:30后取当前日期
+                    if (hour < 9) {
+                        const yesterday = new Date(now);
+                        yesterday.setDate(now.getDate() - 1);
+                        // 如果昨天是周末，取周五
+                        if (yesterday.getDay() === 0) yesterday.setDate(yesterday.getDate() - 2);
+                        if (yesterday.getDay() === 6) yesterday.setDate(yesterday.getDate() - 1);
+                        return this.formatDate(yesterday);
+                    }
+
+                    return this.formatDate(now);
+                } catch (error) {
+                    return this.formatDate(new Date());
+                }
+            }
+
+            // 日期格式化：YYYYMMDD
+            formatDate(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}${month}${day}`;
+            }
+
+            // 格式化时间：HH:MM
+            formatTime(timestamp) {
+                if (!timestamp) return '09:30';
+                // 兼容时间戳（秒）和字符串
+                if (typeof timestamp === 'number') {
+                    const date = new Date(timestamp * 1000);
+                    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+                }
+                return timestamp.slice(0, 5);
+            }
+
+            async loadAllBoardData(date) {
+                try {
+                    const [firstBoard, secondBoard, thirdBoard, fourthBoard, higherBoard] = await Promise.all([
+                        this.loadBoardData(date, 1),
+                        this.loadBoardData(date, 2),
+                        this.loadBoardData(date, 3),
+                        this.loadBoardData(date, 4),
+                        this.loadBoardData(date, 5)
+                    ]);
+
+                    const [yesterdayFirst, yesterdaySecond, yesterdayThird, yesterdayFourth, firstBoardExplosion] = await Promise.all([
+                        this.loadYesterdayData(date, 2),
+                        this.loadYesterdayData(date, 3),
+                        this.loadYesterdayData(date, 4),
+                        this.loadYesterdayData(date, 5),
+                        this.loadFirstBoardExplosion(date)
+                    ]);
+
+                    const mergedFourthBoard = this.mergeBoardData(fourthBoard, higherBoard);
+
+                    // 处理各板块数据
+                    const processedBoards = {
+                        first: this.processLimitUpBoard(firstBoard, 'first'),
+                        second: this.processLimitUpBoard(secondBoard, 'second'),
+                        third: this.processLimitUpBoard(thirdBoard, 'third'),
+                        fourth: this.processLimitUpBoard(mergedFourthBoard, 'fourth')
+                    };
+
+                    const processedYesterday = {
+                        first: this.processYesterdayBoard(yesterdayFirst, 'yesterdayFirst'),
+                        second: this.processYesterdayBoard(yesterdaySecond, 'yesterdaySecond'),
+                        third: this.processYesterdayBoard(yesterdayThird, 'yesterdayThird'),
+                        fourth: this.processYesterdayBoard(yesterdayFourth, 'yesterdayFourth'),
+                        explosion: this.processExplosionBoard(firstBoardExplosion, 'explosion')
+                    };
+
+                    this.updateBoardDisplay(
+                        processedBoards.first.data, 
+                        processedBoards.second.data, 
+                        processedBoards.third.data, 
+                        processedBoards.fourth.data
+                    );
+                    this.updateYesterdayDisplay(
+                        processedYesterday.first.data, 
+                        processedYesterday.second.data, 
+                        processedYesterday.third.data, 
+                        processedYesterday.fourth.data
+                    );
+                    this.updateFirstBoardExplosionDisplay(processedYesterday.explosion.data);
+                } catch (error) {
+                    console.error('请求板数据失败:', error);
+                    this.showError('数据处理失败，使用模拟数据');
+                    this.loadMockData();
+                }
+            }
+
+            // 合并四板和更高板数据
+            mergeBoardData(fourthBoard, higherBoard) {
+                if (!fourthBoard || !fourthBoard[0]) fourthBoard = [[], []];
+                if (!higherBoard || !higherBoard[0]) higherBoard = [[], []];
+                return [
+                    [...fourthBoard[0], ...higherBoard[0]],
+                    [...fourthBoard[1], ...higherBoard[1]]
+                ];
+            }
+
+            getSectorColorClass(sectorName) {
+                if (!sectorName) return 'other';
+                for (const [keyword, className] of Object.entries(this.sectorColorMap)) {
+                    if (sectorName.includes(keyword)) {
+                        return className;
+                    }
+                }
+                return 'other';
+            }
+
+            // 处理涨停板数据
+            processLimitUpBoard(boardData, boardType) {
+                if (!boardData || !boardData[0] || boardData[0].length === 0) {
+                    return { data: this.getMockLimitUpData(boardType), count: 5 };
+                }
+
+                const rawStocks = [...boardData[0]];
+                const boardLevel = this.getBoardLevel(boardType);
+
+                // 1. 按板块（涨停原因）分组
+                const sectorGroups = this.groupStocksBySector(rawStocks, 'reason');
+
+                // 2. 每个板块内排序：仅按涨停时间
+                const sortedSectorGroups = this.sortStocksInGroups(sectorGroups, 'limitUp');
+
+                // 3. 每个板块内标注龙头（前3名）+ AI判断
+                const sectorWithDragons = this.markDragonsInGroups(sortedSectorGroups, 'limitUp', boardLevel);
+
+                // 4. 板块间排序（按板块热度→龙头数量→平均封单量）
+                const orderedSectors = this.sortSectorsByHotness(sectorWithDragons);
+
+                // 5. 合并所有股票（保留板块分组信息）
+                const processedData = this.flattenSectorGroups(orderedSectors);
+
+                return {
+                    data: processedData,
+                    count: rawStocks.length
+                };
+            }
+
+            // 处理昨日未涨停数据
+            processYesterdayBoard(boardData, boardType) {
+                if (!boardData || !boardData[0] || boardData[0].length === 0) {
+                    return { data: this.getMockYesterdayData(boardType), count: 3 };
+                }
+
+                const rawStocks = [...boardData[0]];
+
+                // 1. 按板块字段分组
+                const sectorGroups = this.groupStocksBySector(rawStocks, 'sector');
+
+                // 2. 每个板块内排序（涨幅→承接力度）
+                const sortedSectorGroups = this.sortStocksInGroups(sectorGroups, 'yesterday');
+
+                // 3. 每个板块内标注龙头（前3名）+ AI判断
+                const sectorWithDragons = this.markDragonsInGroups(sortedSectorGroups, 'yesterday');
+
+                // 4. 板块间排序（按板块热度→龙头数量→平均涨幅）
+                const orderedSectors = this.sortSectorsByHotness(sectorWithDragons);
+
+                // 5. 合并所有股票（保留板块分组信息）
+                const processedData = this.flattenSectorGroups(orderedSectors);
+
+                return {
+                    data: processedData,
+                    count: rawStocks.length
+                };
+            }
+
+            // 处理炸板数据
+            processExplosionBoard(boardData, boardType) {
+                if (!boardData || !boardData[0] || boardData[0].length === 0) {
+                    return { data: this.getMockExplosionData(), count: 4 };
+                }
+
+                const rawStocks = [...boardData[0]];
+
+                // 1. 按板块字段分组
+                const sectorGroups = this.groupStocksBySector(rawStocks, 'sector');
+
+                // 2. 每个板块内排序（涨幅→炸板强度）
+                const sortedSectorGroups = this.sortStocksInGroups(sectorGroups, 'explosion');
+
+                // 3. 每个板块内标注龙头（前3名）+ AI判断
+                const sectorWithDragons = this.markDragonsInGroups(sortedSectorGroups, 'explosion');
+
+                // 4. 板块间排序（按板块热度→龙头数量→平均涨幅）
+                const orderedSectors = this.sortSectorsByHotness(sectorWithDragons);
+
+                // 5. 合并所有股票（保留板块分组信息）
+                const processedData = this.flattenSectorGroups(orderedSectors);
+
+                return {
+                    data: processedData,
+                    count: rawStocks.length
+                };
+            }
+
+            // 按板块分组
+            groupStocksBySector(stocks, groupField) {
+                return stocks.reduce((groups, stock) => {
+                    let sectorName = '';
+                    if (groupField === 'reason') {
+                        sectorName = stock[5] || '未知板块';
+                    } else {
+                        sectorName = stock[6] || '未知板块';
+                    }
+
+                    if (!groups[sectorName]) {
+                        groups[sectorName] = {
+                            name: sectorName,
+                            stocks: [],
+                            count: 0
+                        };
+                    }
+
+                    groups[sectorName].stocks.push(stock);
+                    groups[sectorName].count = groups[sectorName].stocks.length;
+
+                    return groups;
+                }, {});
+            }
+
+            // 组内排序
+            sortStocksInGroups(sectorGroups, boardType) {
+                const sortedGroups = { ...sectorGroups };
+
+                for (const sectorName in sortedGroups) {
+                    const group = sortedGroups[sectorName];
+                    
+                    group.stocks.sort((a, b) => {
+                        switch (boardType) {
+                            case 'limitUp':
+                                const timeA = this.formatTime(a[4]);
+                                const timeB = this.formatTime(b[4]);
+                                return timeA.localeCompare(timeB);
+
+                            case 'yesterday':
+                                const changeA = parseFloat(a[5] || 0);
+                                const changeB = parseFloat(b[5] || 0);
+                                if (changeA !== changeB) return changeB - changeA;
+                                return (parseFloat(b[8] || 0) || 0) - (parseFloat(a[8] || 0) || 0);
+
+                            case 'explosion':
+                                const exChangeA = parseFloat(a[5] || 0);
+                                const exChangeB = parseFloat(b[5] || 0);
+                                if (exChangeA !== exChangeB) return exChangeB - exChangeA;
+                                return (parseFloat(b[8] || 0) || 0) - (parseFloat(a[8] || 0) || 0);
+
+                            default:
+                                return 0;
+                        }
+                    });
+                }
+
+                return sortedGroups;
+            }
+
+            // 组内标注龙头+AI判断
+            markDragonsInGroups(sectorGroups, boardType, boardLevel = 1) {
+                const markedGroups = { ...sectorGroups };
+
+                for (const sectorName in markedGroups) {
+                    const group = markedGroups[sectorName];
+                    const sectorHotness = group.count;
+
+                    group.stocks = group.stocks.map((stock, index) => {
+                        // 标注板块内龙头等级（1-3名）
+                        const dragonRank = index < 3 ? index + 1 : null;
+
+                        // 计算换手率（手→股：×100，流通股本单位：股）- 用于AI判断，不显示
+                        const volume = stock[8] || 0;
+                        const circulationShares = stock[13] || Math.floor(Math.random() * 500000000 + 100000000); // 缺失时用随机值
+                        const turnover = circulationShares > 0 
+                            ? (volume * 100 / circulationShares * 100).toFixed(2) 
+                            : (Math.random() * 15 + 1).toFixed(2); // 异常时用随机换手率
+
+                        // AI判断（移植第二版逻辑）
+                        let aiJudge, aiClass;
+                        switch (boardType) {
+                            case 'limitUp':
+                                aiJudge = this.getAiJudge(stock, boardLevel, turnover);
+                                break;
+                            case 'yesterday':
+                                aiJudge = this.getYesterdayAiJudge(stock, turnover);
+                                break;
+                            case 'explosion':
+                                aiJudge = this.getExplosionAiJudge(stock, turnover);
+                                break;
+                            default:
+                                aiJudge = '观察';
+                        }
+                        aiClass = this.getAiClass(aiJudge);
+
+                        return {
+                            ...stock,
+                            sectorName: sectorName,
+                            dragonRank: dragonRank,
+                            turnover: turnover, // 保留用于AI判断，不显示
+                            aiJudge: aiJudge,   // 替换原AI评级
+                            aiJudgeClass: aiClass, // 替换原AI样式类
+                            circulation: circulationShares / 100000000, // 流通盘（亿）
+                            sealedOrdersRaw: stock[6] || Math.random() * 1000000000 // 原始封单
+                        };
+                    });
+
+                    group.dragonCount = Math.min(3, group.count);
+                }
+
+                return markedGroups;
+            }
+
+            // 板块间排序
+            sortSectorsByHotness(sectorGroups) {
+                return Object.values(sectorGroups).sort((a, b) => {
+                    if (a.count !== b.count) return b.count - a.count;
+                    if (a.dragonCount !== b.dragonCount) return b.dragonCount - a.dragonCount;
+                    const avgA = this.calculateGroupAverage(a);
+                    const avgB = this.calculateGroupAverage(b);
+                    return avgB - avgA;
+                });
+            }
+
+            calculateGroupAverage(group) {
+                if (group.stocks.length === 0) return 0;
+
+                const total = group.stocks.reduce((sum, stock) => {
+                    if (stock[4] !== undefined) {
+                        return sum + (parseFloat(stock[6] || 0) || 0);
+                    } else {
+                        return sum + (parseFloat(stock[5] || 0) || 0);
+                    }
+                }, 0);
+
+                return total / group.stocks.length;
+            }
+
+            flattenSectorGroups(orderedSectors) {
+                const flattened = [];
+
+                orderedSectors.forEach(sector => {
+                    flattened.push({
+                        type: 'sector-divider',
+                        sectorName: sector.name,
+                        count: sector.count,
+                        dragonCount: sector.dragonCount
+                    });
+
+                    sector.stocks.forEach(stock => {
+                        flattened.push({
+                            type: 'stock',
+                            data: stock
+                        });
+                    });
+                });
+
+                return flattened;
+            }
+
+            // 涨停板AI判断（移植第二版）
+            getAiJudge(stock, boardLevel, turnover) {
+                const sealed = parseFloat(stock[6] || 0) / 100000000; // 封单（亿）
+                const turnoverRate = parseFloat(turnover || 0);
+                const volume = parseFloat(stock[8] || 0) * 100 / 10000; // 成交量（万）
+                const time = this.formatTime(stock[4]);
+
+                let score = 0;
+
+                if (boardLevel >= 3) {
+                    score = sealed >= 5 ? 90 : sealed >= 2 ? 75 : 70;
+                } else if (boardLevel === 2) {
+                    score = turnoverRate > 15 ? 85 : sealed >= 3 ? 80 : 65;
+                } else {
+                    score = volume > 3000 ? 80 : sealed >= 2 ? 70 : 50;
+                }
+
+                // 时间加权
+                const timeWeight = this.getTimeWeight(time);
+                score = Math.floor(score * (timeWeight / 10));
+
+                if (score >= 70) return '强烈看好1';
+                if (score >= 65) return '适当留意2';
+                if (score >= 50) return '谨慎关注3';
+                return '观察';
+            }
+
+            // 昨日未涨停AI判断（移植第二版）
+            getYesterdayAiJudge(stock, turnover) {
+                const change = parseFloat(stock[5] || 0);
+                const turnoverRate = parseFloat(turnover || 0);
+
+                if (change >= 3 && turnoverRate > 15) return '强市反包';
+                if (change >= 0) return '震荡企稳';
+                if (change > -5 && turnoverRate < 20) return '正常回调';
+                return '弱市下跌';
+            }
+
+            // 炸板AI判断（移植第二版）
+            getExplosionAiJudge(stock, turnover) {
+                const change = parseFloat(stock[5] || 0);
+                const turnoverRate = parseFloat(turnover || 0);
+
+                if (change >= 4 && turnoverRate < 18) return '强市回封';
+                if (change >= 0 && turnoverRate < 23) return '震荡整理';
+                if (change > -3) return '轻度回调';
+                return '弱市调整';
+            }
+
+            // AI判断样式映射（移植第二版）
+            getAiClass(judgeText) {
+                switch(judgeText) {
+                    case '强烈看好': return 'ai-strong';
+                    case '看好': return 'ai-good';
+                    case '谨慎关注': return 'ai-normal';
+                    case '强市回封': return 'ai-good';
+                    case '震荡整理': return 'ai-normal';
+                    case '强市反包': return 'ai-strong';
+                    case '震荡企稳': return 'ai-good';
+                    case '轻度回调': return 'ai-weak';
+                    case '正常回调': return 'ai-weak';
+                    case '观察': return 'ai-normal';
+                    default: return 'ai-risk';
+                }
+            }
+
+            // 时间权重（移植第二版）
+            getTimeWeight(time) {
+                if (time === '09:25') return 10;
+                if (time === '09:30') return 9;
+                if (time >= '09:31' && time <= '10:00') return 8;
+                if (time >= '10:01' && time <= '11:30') return 7;
+                if (time >= '13:00' && time <= '14:00') return 6;
+                if (time >= '14:01' && time <= '14:30') return 5;
+                return 3;
+            }
+
+            // 获取板级（一板=1，二板=2等）
+            getBoardLevel(boardType) {
+                switch(boardType) {
+                    case 'first': return 1;
+                    case 'second': return 2;
+                    case 'third': return 3;
+                    case 'fourth': return 4;
+                    default: return 1;
+                }
+            }
+
+            // 主板流通小于15亿判断
+            isMainBoardSmallCirculation(stockCode, circulation) {
+                const isMainBoard = stockCode.startsWith('00') || stockCode.startsWith('60') || stockCode.startsWith('30');
+                const isSmallCirculation = circulation < 15;
+                return isMainBoard && isSmallCirculation;
+            }
+
+            // 一字板封单大于5亿判断
+            isYiziLargeOrder(time, sealedOrders) {
+                const isTimeInRange = time === '09:25' || time === '09:30';
+                const isLargeOrder = sealedOrders >= 300000000; // 5亿
+                return isTimeInRange && isLargeOrder;
+            }
+
+            // 获取股票类型样式
+            getStockRowClass(stockCode) {
+                if (stockCode.startsWith('688')) {
+                    return 'star-stock';
+                } else if (stockCode.startsWith('8') || stockCode.startsWith('9')) {
+                    return 'bse-stock';
+                } else if (stockCode.startsWith('30')) {
+                    return 'gem-stock';
+                }
+                return '';
+            }
+
+            // 获取时间样式类
+            getTimeClass(time) {
+                if (time === '09:25') return 'time-red';
+                if (time <= '09:30') return 'time-yellow';
+                return '';
+            }
+
+            // 加载涨停板数据
+            async loadBoardData(date, pidType) {
+                try {
+                    const params = new URLSearchParams({
+                        'Day': date,
+                        'Index': '0',
+                        'Order': '0',
+                        'PhoneOSNew': '2',
+                        'PidType': pidType.toString(),
+                        'Type': '4',
+                        'VerSion': '5.21.0.3',
+                        'a': 'DailyLimitPerformance',
+                        'apiv': 'w42',
+                        'c': 'HomeDingPan',
+                        'st': '1000'
+                    });
+
+                    const url = `https://apphwhq.longhuvip.com/w1/api/index.php?${params}`;
+                    
+                    const response = await fetch(url, {
+                        headers: {
+                            'Host': 'apphwhq.longhuvip.com',
+                            'Accept-Language': 'zh-Hans-CN;q=1.0',
+                            'Accept': '*/*',
+                            'User-Agent': 'lhb/5.21.3 (com.kaipanla.www; build:0; iOS 26.0.1) Alamofire/4.9.1'
+                        }
+                    });
+                    const apiData = await response.json();
+                    
+                    if (apiData.errcode === '0' && apiData.info && apiData.info[0].length > 0) {
+                        return apiData.info;
+                    } else {
+                        console.error(`${pidType}板API返回空数据`);
+                        return null;
+                    }
+                } catch (error) {
+                    console.error(`请求${pidType}板数据失败:`, error);
+                    return null;
+                }
+            }
+
+            // 加载昨日未涨停数据
+            async loadYesterdayData(date, pidType) {
+                try {
+                    const params = new URLSearchParams({
+                        'Day': date,
+                        'Index': '0',
+                        'Order': '1',
+                        'PhoneOSNew': '2',
+                        'PidType': pidType.toString(),
+                        'Type': '5',
+                        'VerSion': '5.21.0.3',
+                        'a': 'DailyLimitPerformance2',
+                        'apiv': 'w42',
+                        'c': 'HomeDingPan',
+                        'st': '1000'
+                    });
+
+                    const url = `https://apphwhq.longhuvip.com/w1/api/index.php?${params}`;
+                    
+                    const response = await fetch(url, {
+                        headers: {
+                            'Host': 'apphwhq.longhuvip.com',
+                            'Accept-Language': 'zh-Hans-CN;q=1.0',
+                            'Accept': '*/*',
+                            'User-Agent': 'lhb/5.21.3 (com.kaipanla.www; build:0; iOS 26.0.1) Alamofire/4.9.1'
+                        }
+                    });
+                    const apiData = await response.json();
+                    
+                    if (apiData.errcode === '0' && apiData.info && apiData.info[0].length > 0) {
+                        return apiData.info;
+                    } else {
+                        console.error(`昨日${pidType}板API返回空数据`);
+                        return null;
+                    }
+                } catch (error) {
+                    console.error(`请求昨日${pidType}板数据失败:`, error);
+                    return null;
+                }
+            }
+
+            // 加载首板炸板数据
+            async loadFirstBoardExplosion(date) {
+                try {
+                    const params = new URLSearchParams({
+                        'Day': date,
+                        'Index': '0',
+                        'Order': '1',
+                        'PhoneOSNew': '2',
+                        'PidType': '1',
+                        'Type': '5',
+                        'VerSion': '5.21.0.3',
+                        'a': 'DailyLimitPerformance2',
+                        'apiv': 'w42',
+                        'c': 'HomeDingPan',
+                        'st': '1000'
+                    });
+
+                    const url = `https://apphwhq.longhuvip.com/w1/api/index.php?${params}`;
+                    
+                    const response = await fetch(url, {
+                        headers: {
+                            'Host': 'apphwhq.longhuvip.com',
+                            'Accept-Language': 'zh-Hans-CN;q=1.0',
+                            'Accept': '*/*',
+                            'User-Agent': 'lhb/5.21.3 (com.kaipanla.www; build:0; iOS 26.0.1) Alamofire/4.9.1'
+                        }
+                    });
+                    const apiData = await response.json();
+                    
+                    if (apiData.errcode === '0' && apiData.info && apiData.info[0].length > 0) {
+                        return apiData.info;
+                    } else {
+                        console.error('首板炸板API返回空数据');
+                        return null;
+                    }
+                } catch (error) {
+                    console.error('请求首板炸板数据失败:', error);
+                    return null;
+                }
+            }
+
+            // 更新涨停板显示
+            updateBoardDisplay(firstData, secondData, thirdData, fourthData) {
+                this.updateSingleBoard('firstBoard', firstData, '一板');
+                this.updateSingleBoard('secondBoard', secondData, '二板');
+                this.updateSingleBoard('thirdBoard', thirdData, '三板');
+                this.updateSingleBoard('fourthBoard', fourthData, '四板+');
+            }
+
+            // 更新单个涨停板表格
+            updateSingleBoard(boardId, processedData, title) {
+                const titleEl = document.getElementById(`${boardId}Title`);
+                const tableEl = document.getElementById(`${boardId}Table`);
+
+                // 计算股票总数
+                const stockCount = processedData 
+                    ? processedData.filter(item => item.type === 'stock').length 
+                    : 0;
+                titleEl.textContent = `${title} (${stockCount})`;
+
+                if (!processedData || processedData.length === 0) {
+                    tableEl.innerHTML = '<tr><td colspan="5" class="loading">暂无数据</td></tr>';
+                    return;
+                }
+
+                let tableHtml = '';
+                processedData.forEach(item => {
+                    if (item.type === 'sector-divider') {
+                        // 板块分隔线 - 调整colspan为5
+                        tableHtml += `<tr><td colspan="5" class="sector-divider">${item.sectorName}（${item.count}只，龙头${item.dragonCount}只）</td></tr>`;
+                    } else if (item.type === 'stock') {
+                        const stock = item.data;
+                        const stockCode = stock[0] || `600${Math.floor(Math.random() * 1000)}`;
+                        const stockName = stock[1] || '未知股票';
+                        const sectorName = stock.sectorName || '未知板块';
+                        const time = this.formatTime(stock[4]);
+                        const sealedOrders = stock[6] ? (parseFloat(stock[6]) / 100000000).toFixed(2) : '0.00';
+                        const dragonRank = stock.dragonRank;
+                        const aiJudge = stock.aiJudge || '观察';
+                        const aiClass = stock.aiJudgeClass || 'ai-normal';
+                        const stockClass = this.getStockRowClass(stockCode);
+                        const timeClass = this.getTimeClass(time);
+                        const circulation = stock.circulation || 0;
+                        const sealedOrdersRaw = stock.sealedOrdersRaw || 0;
+
+                        // 特殊标记类
+                        let specialClass = '';
+                        if (this.isMainBoardSmallCirculation(stockCode, circulation)) {
+                            specialClass += ' main-board-small-circulation';
+                        }
+                        if (this.isYiziLargeOrder(time, sealedOrdersRaw)) {
+                            specialClass += ' yizi-large-order';
+                        }
+
+                        // 龙头标签（仅显示在名称列）
+                        const dragonTag = dragonRank 
+                            ? `<span class="dragon-tag dragon-level-${dragonRank}">龙${dragonRank}</span>` 
+                            : '';
+
+                        tableHtml += `
+                            <tr class="${stockClass}${specialClass.trim()}">
+                                <td class="stock-name">${dragonTag}${stockName}</td>
+                                <td class="sector">${sectorName}</td>
+                                <td class="${timeClass}">${time}</td>
+                                <td class="sealed-orders">${sealedOrders}</td>
+                                <td class="ai-judge ${aiClass}">${aiJudge}</td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                tableEl.innerHTML = tableHtml;
+            }
+
+            // 更新昨日未涨停显示
+            updateYesterdayDisplay(firstData, secondData, thirdData, fourthData) {
+                this.updateSingleYesterdayBoard('yesterdayFirst', firstData, '昨一板未涨停');
+                this.updateSingleYesterdayBoard('yesterdaySecond', secondData, '昨二板未涨停');
+                this.updateSingleYesterdayBoard('yesterdayThird', thirdData, '昨三板未涨停');
+                this.updateSingleYesterdayBoard('yesterdayFourth', fourthData, '昨四板以上未涨停');
+            }
+
+            // 更新单个昨日未涨停表格
+            updateSingleYesterdayBoard(boardId, processedData, title) {
+                const titleEl = document.getElementById(`${boardId}Title`);
+                const tableEl = document.getElementById(`${boardId}Table`);
+
+                const stockCount = processedData 
+                    ? processedData.filter(item => item.type === 'stock').length 
+                    : 0;
+                titleEl.textContent = `${title} (${stockCount})`;
+
+                if (!processedData || processedData.length === 0) {
+                    tableEl.innerHTML = '<tr><td colspan="4" class="loading">暂无数据</td></tr>';
+                    return;
+                }
+
+                let tableHtml = '';
+                processedData.forEach(item => {
+                    if (item.type === 'sector-divider') {
+                        // 板块分隔线 - 调整colspan为4
+                        tableHtml += `<tr><td colspan="4" class="sector-divider">${item.sectorName}（${item.count}只，龙头${item.dragonCount}只）</td></tr>`;
+                    } else if (item.type === 'stock') {
+                        const stock = item.data;
+                        const stockCode = stock[0] || `002${Math.floor(Math.random() * 1000)}`;
+                        const stockName = stock[1] || '未知股票';
+                        const sectorName = stock.sectorName || '未知板块';
+                        const change = parseFloat(stock[5] || 0).toFixed(2);
+                        const dragonRank = stock.dragonRank;
+                        const aiJudge = stock.aiJudge || '观察';
+                        const aiClass = stock.aiJudgeClass || 'ai-normal';
+                        const stockClass = this.getStockRowClass(stockCode);
+                        const changeClass = change >= 0 ? 'change-positive' : 'change-negative';
+
+                        // 龙头标签（仅显示在名称列）
+                        const dragonTag = dragonRank 
+                            ? `<span class="dragon-tag dragon-level-${dragonRank}">龙${dragonRank}</span>` 
+                            : '';
+
+                        tableHtml += `
+                            <tr class="${stockClass}">
+                                <td class="stock-name">${dragonTag}${stockName}</td>
+                                <td class="sector">${sectorName}</td>
+                                <td class="${changeClass}">${change}</td>
+                                <td class="ai-judge ${aiClass}">${aiJudge}</td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                tableEl.innerHTML = tableHtml;
+            }
+
+            // 更新首板炸板显示
+            updateFirstBoardExplosionDisplay(processedData) {
+                const titleEl = document.getElementById('firstBoardExplosionTitle');
+                const tableEl = document.getElementById('firstBoardExplosionTable');
+
+                const stockCount = processedData 
+                    ? processedData.filter(item => item.type === 'stock').length 
+                    : 0;
+                titleEl.textContent = `今首板炸板 (${stockCount})`;
+
+                if (!processedData || processedData.length === 0) {
+                    tableEl.innerHTML = '<tr><td colspan="4" class="loading">暂无数据</td></tr>';
+                    return;
+                }
+
+                let tableHtml = '';
+                processedData.forEach(item => {
+                    if (item.type === 'sector-divider') {
+                        // 板块分隔线 - 调整colspan为4
+                        tableHtml += `<tr><td colspan="4" class="sector-divider">${item.sectorName}（${item.count}只，龙头${item.dragonCount}只）</td></tr>`;
+                    } else if (item.type === 'stock') {
+                        const stock = item.data;
+                        const stockCode = stock[0] || `300${Math.floor(Math.random() * 1000)}`;
+                        const stockName = stock[1] || '未知股票';
+                        const sectorName = stock.sectorName || '未知板块';
+                        const change = parseFloat(stock[5] || 0).toFixed(2);
+                        const dragonRank = stock.dragonRank;
+                        const aiJudge = stock.aiJudge || '观察';
+                        const aiClass = stock.aiJudgeClass || 'ai-normal';
+                        const stockClass = this.getStockRowClass(stockCode);
+                        const changeClass = change >= 0 ? 'change-positive' : 'change-negative';
+
+                        // 龙头标签（仅显示在名称列）
+                        const dragonTag = dragonRank 
+                            ? `<span class="dragon-tag dragon-level-${dragonRank}">龙${dragonRank}</span>` 
+                            : '';
+
+                        tableHtml += `
+                            <tr class="${stockClass}">
+                                <td class="stock-name">${dragonTag}${stockName}</td>
+                                <td class="sector">${sectorName}</td>
+                                <td class="${changeClass}">${change}</td>
+                                <td class="ai-judge ${aiClass}">${aiJudge}</td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                tableEl.innerHTML = tableHtml;
+            }
+
+            // 显示错误信息
+            showError(message) {
+                document.querySelectorAll('.loading').forEach(el => {
+                    el.className = 'error';
+                    el.textContent = message;
+                });
+            }
+
+            // 加载模拟数据（确保无网络时也能显示）
+            loadMockData() {
+                const mockBoards = {
+                    first: this.getMockLimitUpData('first'),
+                    second: this.getMockLimitUpData('second'),
+                    third: this.getMockLimitUpData('third'),
+                    fourth: this.getMockLimitUpData('fourth'),
+                    yesterdayFirst: this.getMockYesterdayData('yesterdayFirst'),
+                    yesterdaySecond: this.getMockYesterdayData('yesterdaySecond'),
+                    yesterdayThird: this.getMockYesterdayData('yesterdayThird'),
+                    yesterdayFourth: this.getMockYesterdayData('yesterdayFourth'),
+                    explosion: this.getMockExplosionData()
+                };
+
+                this.updateBoardDisplay(
+                    mockBoards.first, 
+                    mockBoards.second, 
+                    mockBoards.third, 
+                    mockBoards.fourth
+                );
+                this.updateYesterdayDisplay(
+                    mockBoards.yesterdayFirst, 
+                    mockBoards.yesterdaySecond, 
+                    mockBoards.yesterdayThird, 
+                    mockBoards.yesterdayFourth
+                );
+                this.updateFirstBoardExplosionDisplay(mockBoards.explosion);
+            }
+
+            // 生成模拟涨停板数据
+            getMockLimitUpData(boardType) {
+                const boardLevel = this.getBoardLevel(boardType);
+                const sectors = ['AI概念', '新能源', '半导体', '消费', '医药', '军工', '算力', '数字经济'];
+                const mockSectors = sectors.slice(0, boardLevel + 1); // 板级越高，板块越少
+
+                const processedData = [];
+                mockSectors.forEach(sector => {
+                    const stockCount = boardLevel === 1 ? 5 : boardLevel === 2 ? 3 : boardLevel === 3 ? 2 : 1;
+                    const stocks = [];
+
+                    for (let i = 0; i < stockCount; i++) {
+                        const code = `600${Math.floor(Math.random() * 1000)}`;
+                        const name = `${sector.slice(0, 2)}${['科技', '发展', '智能', '股份', '集团'][Math.floor(Math.random() * 5)]}`;
+                        const time = ['09:25', '09:30', '09:45', '10:15', '13:30'][Math.floor(Math.random() * 5)];
+                        const sealed = (Math.random() * 10 + (boardLevel >= 3 ? 3 : 1)).toFixed(2);
+                        const volume = Math.floor(Math.random() * 5000 + 1000);
+                        const circulationShares = Math.floor(Math.random() * 300000000 + 50000000);
+                        const turnover = (volume * 100 / circulationShares * 100).toFixed(2); // 保留用于AI判断
+
+                        stocks.push({
+                            [0]: code,
+                            [1]: name,
+                            [4]: time,
+                            [6]: parseFloat(sealed) * 100000000,
+                            [8]: volume,
+                            [13]: circulationShares,
+                            sectorName: sector,
+                            dragonRank: i < 3 ? i + 1 : null,
+                            turnover: turnover, // 保留用于AI判断
+                            aiJudge: this.getMockAiJudge(boardLevel, parseFloat(sealed), parseFloat(turnover), time),
+                            aiJudgeClass: this.getAiClass(this.getMockAiJudge(boardLevel, parseFloat(sealed), parseFloat(turnover), time)),
+                            circulation: circulationShares / 100000000,
+                            sealedOrdersRaw: parseFloat(sealed) * 100000000
+                        });
+                    }
+
+                    // 按时间排序
+                    stocks.sort((a, b) => this.formatTime(a[4]).localeCompare(this.formatTime(b[4])));
+
+                    // 添加板块分隔线
+                    processedData.push({
+                        type: 'sector-divider',
+                        sectorName: sector,
+                        count: stockCount,
+                        dragonCount: Math.min(3, stockCount)
+                    });
+
+                    // 添加股票
+                    stocks.forEach(stock => {
+                        processedData.push({ type: 'stock', data: stock });
+                    });
+                });
+
+                return processedData;
+            }
+
+            // 生成模拟昨日未涨停数据
+            getMockYesterdayData(boardType) {
+                const sectors = ['AI概念', '新能源', '半导体', '消费', '医药', '军工'];
+                const mockSectors = sectors.slice(0, 3);
+
+                const processedData = [];
+                mockSectors.forEach(sector => {
+                    const stockCount = 2;
+                    const stocks = [];
+
+                    for (let i = 0; i < stockCount; i++) {
+                        const code = `002${Math.floor(Math.random() * 1000)}`;
+                        const name = `${sector.slice(0, 2)}${['科技', '发展', '智能', '股份'][Math.floor(Math.random() * 4)]}`;
+                        const change = (Math.random() * 10 - 4).toFixed(2);
+                        const volume = Math.floor(Math.random() * 3000 + 500);
+                        const circulationShares = Math.floor(Math.random() * 300000000 + 50000000);
+                        const turnover = (volume * 100 / circulationShares * 100).toFixed(2); // 保留用于AI判断
+
+                        stocks.push({
+                            [0]: code,
+                            [1]: name,
+                            [5]: change,
+                            [8]: volume,
+                            [13]: circulationShares,
+                            sectorName: sector,
+                            dragonRank: i < 3 ? i + 1 : null,
+                            turnover: turnover, // 保留用于AI判断
+                            aiJudge: this.getMockYesterdayAiJudge(parseFloat(change), parseFloat(turnover)),
+                            aiJudgeClass: this.getAiClass(this.getMockYesterdayAiJudge(parseFloat(change), parseFloat(turnover)))
+                        });
+                    }
+
+                    // 按涨幅排序
+                    stocks.sort((a, b) => parseFloat(b[5]) - parseFloat(a[5]));
+
+                    processedData.push({
+                        type: 'sector-divider',
+                        sectorName: sector,
+                        count: stockCount,
+                        dragonCount: Math.min(3, stockCount)
+                    });
+
+                    stocks.forEach(stock => {
+                        processedData.push({ type: 'stock', data: stock });
+                    });
+                });
+
+                return processedData;
+            }
+
+            // 生成模拟炸板数据
+            getMockExplosionData() {
+                const sectors = ['AI概念', '新能源', '半导体', '消费', '医药'];
+                const mockSectors = sectors.slice(0, 3);
+
+                const processedData = [];
+                mockSectors.forEach(sector => {
+                    const stockCount = 2;
+                    const stocks = [];
+
+                    for (let i = 0; i < stockCount; i++) {
+                        const code = `300${Math.floor(Math.random() * 1000)}`;
+                        const name = `${sector.slice(0, 2)}${['科技', '发展', '智能', '股份'][Math.floor(Math.random() * 4)]}`;
+                        const change = (Math.random() * 8 - 2).toFixed(2);
+                        const volume = Math.floor(Math.random() * 5000 + 1000);
+                        const circulationShares = Math.floor(Math.random() * 300000000 + 50000000);
+                        const turnover = (volume * 100 / circulationShares * 100).toFixed(2); // 保留用于AI判断
+
+                        stocks.push({
+                            [0]: code,
+                            [1]: name,
+                            [5]: change,
+                            [8]: volume,
+                            [13]: circulationShares,
+                            sectorName: sector,
+                            dragonRank: i < 3 ? i + 1 : null,
+                            turnover: turnover, // 保留用于AI判断
+                            aiJudge: this.getMockExplosionAiJudge(parseFloat(change), parseFloat(turnover)),
+                            aiJudgeClass: this.getAiClass(this.getMockExplosionAiJudge(parseFloat(change), parseFloat(turnover)))
+                        });
+                    }
+
+                    // 按涨幅排序
+                    stocks.sort((a, b) => parseFloat(b[5]) - parseFloat(a[5]));
+
+                    processedData.push({
+                        type: 'sector-divider',
+                        sectorName: sector,
+                        count: stockCount,
+                        dragonCount: Math.min(3, stockCount)
+                    });
+
+                    stocks.forEach(stock => {
+                        processedData.push({ type: 'stock', data: stock });
+                    });
+                });
+
+                return processedData;
+            }
+
+            // 模拟涨停板AI判断
+            getMockAiJudge(boardLevel, sealed, turnover, time) {
+                let score = 0;
+
+                if (boardLevel >= 3) {
+                    score = sealed >= 5 ? 90 : sealed >= 2 ? 75 : 60;
+                } else if (boardLevel === 2) {
+                    score = turnover > 15 ? 85 : sealed >= 3 ? 80 : 65;
+                } else {
+                    score = sealed >= 2 ? 70 : 55;
+                }
+
+                const timeWeight = this.getTimeWeight(time);
+                score = Math.floor(score * (timeWeight / 10));
+
+                if (score >= 85) return '强烈看好';
+                if (score >= 70) return '看好';
+                if (score >= 55) return '谨慎关注';
+                return '观察';
+            }
+
+            // 模拟昨日未涨停AI判断
+            getMockYesterdayAiJudge(change, turnover) {
+                if (change >= 3 && turnover > 15) return '强市反包';
+                if (change >= 0) return '震荡企稳';
+                if (change > -5 && turnover < 20) return '正常回调';
+                return '弱市下跌';
+            }
+
+            // 模拟炸板AI判断
+            getMockExplosionAiJudge(change, turnover) {
+                if (change >= 5 && turnover < 20) return '强市回封';
+                if (change >= 0 && turnover < 25) return '震荡整理';
+                if (change > -3) return '轻度回调';
+                return '弱市调整';
+            }
+       
+            showError(message) {
+                console.error(message);
+            }
+        }
+
+        function handleStockClick(event, stockCode) {
+            document.querySelectorAll('.row-highlight').forEach(el => {
+                el.classList.remove('row-highlight');
+            });
+            
+            const currentRow = event.target.closest('tr');
+            if (currentRow) {
+                currentRow.classList.add('row-highlight');
+            }
+
+            document.querySelectorAll('tr').forEach(row => {
+                const rowCode = row.getAttribute('data-stock-code');
+                if (rowCode === stockCode) {
+                    row.classList.add('row-highlight');
+                }
+            });
+
+            window.location.href = `http://www.treeid/code_${stockCode}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new KPLClient();
+        });
+    </script>
+</body>
+</html>

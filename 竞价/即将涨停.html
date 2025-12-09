@@ -1,0 +1,724 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>即将涨停股票数据</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+            overflow-x: auto;
+        }
+        
+        .controls {
+            margin-bottom: 10px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center; /* 添加居中对齐 */
+            gap: 10px;
+        }
+
+        .controls .title {
+            font-weight: bold;
+            color: #dc3545;
+            font-size: 18px;
+        }
+
+        .controls label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .controls select {
+            padding: 5px 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: white;
+            margin-left: 5px;
+        }
+
+        .controls .link {
+            color: #666;
+            font-size: 14px;
+            text-decoration: none;
+            margin-left: 20px;
+        }
+
+        .controls .link:hover {
+            text-decoration: underline;
+            color: #333;
+        }
+
+
+        
+        .loading {
+            text-align: center;
+            color: #666;
+            margin: 20px 0;
+        }
+        
+        .error {
+            color: #dc3545;
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f8d7da;
+            border-radius: 5px;
+        }
+        
+        table {
+            width: 100%;
+            min-width: 900px;
+            border-collapse: collapse;
+            margin: 0;
+            table-layout: fixed;
+        }
+
+
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 6px 0px;
+            text-align: center;
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        th:hover {
+            background-color: #e9ecef;
+        }
+
+        th.sorted-desc::after {
+            content: ' ↓';
+            color: #007bff;
+            font-weight: bold;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        tr:hover {
+            background-color: #e8f4f8;
+        }
+        
+        .positive {
+            color: #dc3545;
+        }
+        
+        .negative {
+            color: #28a745;
+        }
+        
+        .stock-code {
+            color: #007bff;
+        }
+        
+        .stock-name {
+            font-weight: bold;
+            cursor: pointer;
+            color: #007bff;
+        }
+
+        .stock-name:hover {
+            text-decoration: underline;
+            color: #0056b3;
+        }
+        
+        .price {
+            color: #dc3545;
+        }
+        
+        /* 联动相关样式 */
+        .selected-row {
+            background-color: #E6F3FF !important;
+        }
+        
+        /* 联动提示框样式 */
+        .linkage-toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 12px 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: white;
+            z-index: 1000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .linkage-toast.success {
+            background-color: #4CAF50;
+        }
+        
+        .linkage-toast.error {
+            background-color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <span class="title">即将涨停</span>
+        <label for="autoRefreshSelect">定时刷新: </label>
+        <select id="autoRefreshSelect" onchange="updateAutoRefresh()">
+            <option value="0">关闭</option>
+            <option value="3">3秒</option>
+            <option value="5" selected>5秒</option>
+            <option value="10">10秒</option>
+        </select>
+        <span id="refreshStatus" style="color: #666; font-size: 14px;"></span>
+        <!-- 通达信联动开关 -->
+        <label style="font-size: 14px; display: flex; align-items: center; gap: 4px;">
+            <input type="checkbox" id="tdxLinkSwitch" style="width: 16px; height: 16px; vertical-align: middle;">
+            <span>通达信联动</span>
+        </label>
+        <!-- 同花顺联动开关 -->
+        <label style="font-size: 14px; display: flex; align-items: center; gap: 4px;">
+            <input type="checkbox" id="thsLinkSwitch" style="width: 16px; height: 16px; vertical-align: middle;">
+            <span>同花顺联动</span>
+        </label>
+    </div>
+        
+        <div id="loading" class="loading" style="display: none;">
+            正在加载数据...
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        <table id="stockTable" style="display: none;">
+            <colgroup>
+                <col style="width: 30px;">  <!-- 股票代码 -->
+                <col style="width: 40px;"> <!-- 股票名称 -->
+                <col style="width: 40px;">  <!-- 涨幅 -->
+                <col style="width: 30px;">  <!-- 价格 -->
+                <col style="width: 40px;">  <!-- 流通 -->
+                <col style="width: 40px;">  <!-- 涨速 -->
+                <col style="width: 40px;">  <!-- 封板率 -->
+                <col style="width: 40px;">  <!-- 换手率 -->
+                <col style="width: 40px;">  <!-- 成交额 -->
+            </colgroup>
+            <thead>
+                <tr>
+                    <th onclick="sortTable('code')" data-field="code">股票代码</th>
+                    <th onclick="sortTable('name')" data-field="name">股票名称</th>
+                    <th onclick="sortTable('change_rate')" data-field="change_rate">涨幅</th>
+                    <th onclick="sortTable('latest')" data-field="latest">价格</th>
+                    <th onclick="sortTable('currency_value')" data-field="currency_value">流通</th>
+                    <th onclick="sortTable('rise_rate')" data-field="rise_rate">涨速</th>
+                    <th onclick="sortTable('limit_up_suc_rate')" data-field="limit_up_suc_rate">封板率</th>
+                    <th onclick="sortTable('turnover_rate')" data-field="turnover_rate">换手率</th>
+                    <th onclick="sortTable('turnover')" data-field="turnover">成交额</th>
+                </tr>
+            </thead>
+            <tbody id="stockTableBody">
+            </tbody>
+        </table>
+
+    <script>
+        // 全局变量
+        let autoRefreshTimer = null;
+        let countdownTimer = null;
+        let remainingSeconds = 0;
+        let currentStockData = [];
+        let currentSortField = null;
+        let currentSortOrder = 'desc'; // 默认从大到小
+
+        // 格式化数字，保留两位小数
+        function formatNumber(num, decimals = 2) {
+            if (num === null || num === undefined) return 'N/A';
+            return parseFloat(num).toFixed(decimals);
+        }
+        
+        // 格式化百分比
+        function formatPercentage(num, decimals = 2) {
+            if (num === null || num === undefined) return 'N/A';
+            return formatNumber(num, decimals) + '%';
+        }
+        
+        // 格式化封板率为百分比
+        function formatSuccessRate(rate) {
+            if (rate === null || rate === undefined) return 'N/A';
+            return formatNumber(rate * 100, 2) + '%';
+        }
+        
+        // 格式化金额（除以1亿）
+        function formatAmount(amount) {
+            if (amount === null || amount === undefined) return 'N/A';
+            return formatNumber(amount / 100000000, 2) + '亿';
+        }
+
+        // 保存用户选择到localStorage
+        function saveUserPreference(interval) {
+            localStorage.setItem('autoRefreshInterval', interval);
+        }
+
+        // 从localStorage读取用户选择
+        function loadUserPreference() {
+            const saved = localStorage.getItem('autoRefreshInterval');
+            return saved !== null ? saved : '5'; // 默认5秒
+        }
+
+        // 更新定时刷新设置
+        function updateAutoRefresh() {
+            const select = document.getElementById('autoRefreshSelect');
+            const interval = parseInt(select.value);
+
+            // 保存用户选择
+            saveUserPreference(interval);
+
+            // 清除现有定时器
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+                autoRefreshTimer = null;
+            }
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+
+            const statusEl = document.getElementById('refreshStatus');
+
+            if (interval === 0) {
+                statusEl.textContent = '定时刷新已关闭';
+                return;
+            }
+
+            // 设置新的定时器
+            remainingSeconds = interval;
+            updateCountdown();
+
+            autoRefreshTimer = setInterval(() => {
+                fetchStockData(true); // 传入true表示这是自动刷新
+                remainingSeconds = interval;
+            }, interval * 1000);
+
+            countdownTimer = setInterval(updateCountdown, 1000);
+        }
+
+        // 更新倒计时显示
+        function updateCountdown() {
+            const statusEl = document.getElementById('refreshStatus');
+            if (remainingSeconds > 0) {
+                statusEl.textContent = `下次刷新: ${remainingSeconds}秒`;
+                remainingSeconds--;
+            }
+        }
+
+        // 保存排序状态
+        function saveSortState(field, order) {
+            localStorage.setItem('stockSortField', field);
+            localStorage.setItem('stockSortOrder', order);
+        }
+
+        // 读取排序状态
+        function loadSortState() {
+            const field = localStorage.getItem('stockSortField');
+            const order = localStorage.getItem('stockSortOrder') || 'desc';
+            return { field, order };
+        }
+
+        // 表格排序函数
+        function sortTable(field) {
+            // 如果点击的是当前排序字段，则切换排序顺序，否则默认从大到小
+            if (currentSortField === field) {
+                currentSortOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
+            } else {
+                currentSortField = field;
+                currentSortOrder = 'desc'; // 默认从大到小
+            }
+
+            // 保存排序状态
+            saveSortState(currentSortField, currentSortOrder);
+
+            // 更新表头显示
+            updateTableHeaders();
+
+            // 对当前数据进行排序并显示
+            if (currentStockData.length > 0) {
+                sortAndDisplayData(currentStockData);
+            }
+        }
+
+        // 更新表头显示
+        function updateTableHeaders() {
+            // 清除所有表头的排序标识
+            document.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sorted-desc', 'sorted-asc');
+            });
+
+            // 为当前排序字段添加标识
+            if (currentSortField) {
+                const th = document.querySelector(`th[data-field="${currentSortField}"]`);
+                if (th) {
+                    th.classList.add(currentSortOrder === 'desc' ? 'sorted-desc' : 'sorted-asc');
+                }
+            }
+        }
+
+        // 排序并显示数据
+        function sortAndDisplayData(data) {
+            if (!currentSortField) {
+                displayStockData(data);
+                return;
+            }
+
+            const sortedData = [...data].sort((a, b) => {
+                let aVal = a[currentSortField];
+                let bVal = b[currentSortField];
+
+                // 处理null/undefined值
+                if (aVal == null) aVal = currentSortOrder === 'desc' ? -Infinity : Infinity;
+                if (bVal == null) bVal = currentSortOrder === 'desc' ? -Infinity : Infinity;
+
+                // 数字类型排序
+                if (typeof aVal === 'number' && typeof bVal === 'number') {
+                    return currentSortOrder === 'desc' ? bVal - aVal : aVal - bVal;
+                }
+
+                // 字符串类型排序
+                const aStr = String(aVal).toLowerCase();
+                const bStr = String(bVal).toLowerCase();
+
+                if (currentSortOrder === 'desc') {
+                    return bStr.localeCompare(aStr);
+                } else {
+                    return aStr.localeCompare(bStr);
+                }
+            });
+
+            displayStockData(sortedData);
+        }
+
+        // 获取股票数据 - 无感刷新版本
+        function fetchStockData(isAutoRefresh = false) {
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const tableEl = document.getElementById('stockTable');
+
+            // 只在手动刷新时显示加载状态，自动刷新时保持界面不变
+            if (!isAutoRefresh) {
+                loadingEl.style.display = 'block';
+                errorEl.style.display = 'none';
+                tableEl.style.display = 'none';
+            }
+
+            try {
+                // 构建请求参数（写死参数值）
+                const params = new URLSearchParams({
+                    page: '1',
+                    limit: '30',  // 默认30条
+                    field: '199112,10,48,1968584,19,3475914,9003,9004',
+                    filter: 'HS,GEM2STAR',  // 沪深+创业板
+                    order_field: '199112',  // 默认排序
+                    order_type: '0'
+                });
+
+                // 使用代理服务或者提示用户使用浏览器扩展
+                const targetUrl = `https://data.10jqka.com.cn/dataapi/limit_up/limit_up?${params.toString()}`;
+
+                // 尝试直接请求，如果失败则提示用户
+                fetch(targetUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json, text/plain, */*',
+                        'Accept-Language': 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+                        'User-Agent': 'Mozilla/5.0 (Linux; Android 14; V2178A Build/UP1A.231005.007; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/116.0.0.0 Mobile Safari/537.36 Hexin_Gphone/11.31.04 (Royal Flush) hxtheme/0 innerversion/G037.09.038.1.32 followPhoneSystemTheme/0 userid/567424083 getHXAPPAccessibilityMode/0 hxNewFont/1 isVip/0 getHXAPPFontSetting/normal getHXAPPAdaptOldSetting/0',
+                        'Referer': 'https://data.10jqka.com.cn/mobile/limitup/v2/index.html'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status_code === 0 && data.data && data.data.info) {
+                        displayStockData(data.data.info);
+                        // 成功获取数据后隐藏错误信息
+                        errorEl.style.display = 'none';
+                    } else {
+                        throw new Error('数据格式不正确或请求失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('请求失败:', error);
+                    // 只在手动刷新时显示错误信息，自动刷新失败时静默处理
+                    if (!isAutoRefresh) {
+                        errorEl.innerHTML = `
+                            <strong>获取数据失败: ${error.message}</strong><br><br>
+                            <div style="text-align: left; max-width: 600px; margin: 0 auto;">
+                                <strong>解决方案：</strong><br>
+                                1. <strong>检查网络连接</strong>：确保可以访问同花顺网站
+                            </div>
+                        `;
+                        errorEl.style.display = 'block';
+                    }
+                })
+                .finally(() => {
+                    // 只在手动刷新时隐藏加载状态
+                    if (!isAutoRefresh) {
+                        loadingEl.style.display = 'none';
+                    }
+
+                    // 重置倒计时
+                    const select = document.getElementById('autoRefreshSelect');
+                    const interval = parseInt(select.value);
+                    if (interval > 0) {
+                        remainingSeconds = interval;
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                // 只在手动刷新时显示错误信息
+                if (!isAutoRefresh) {
+                    errorEl.innerHTML = `
+                        <strong>获取数据失败: ${error.message}</strong><br><br>
+                        <div style="text-align: left; max-width: 600px; margin: 0 auto;">
+                            <strong>解决方案：</strong><br>
+                            1. <strong>检查网络连接</strong>：确保可以访问同花顺网站
+                        </div>
+                    `;
+                    errorEl.style.display = 'block';
+                    loadingEl.style.display = 'none';
+                }
+            }
+        }
+        
+        // 显示股票数据到表格
+        function displayStockData(stocks) {
+            const tbody = document.getElementById('stockTableBody');
+            const tableEl = document.getElementById('stockTable');
+
+            // 保存原始数据
+            const dataChanged = stocks !== currentStockData;
+            if (dataChanged) {
+                currentStockData = stocks;
+            }
+
+            // 如果有排序设置且数据发生变化，应用排序
+            if (currentSortField && dataChanged) {
+                // 直接排序数据而不递归调用
+                const sortedData = [...stocks].sort((a, b) => {
+                    let aVal = a[currentSortField];
+                    let bVal = b[currentSortField];
+
+                    // 处理null/undefined值
+                    if (aVal == null) aVal = currentSortOrder === 'desc' ? -Infinity : Infinity;
+                    if (bVal == null) bVal = currentSortOrder === 'desc' ? -Infinity : Infinity;
+
+                    // 数字类型排序
+                    if (typeof aVal === 'number' && typeof bVal === 'number') {
+                        return currentSortOrder === 'desc' ? bVal - aVal : aVal - bVal;
+                    }
+
+                    // 字符串类型排序
+                    const aStr = String(aVal).toLowerCase();
+                    const bStr = String(bVal).toLowerCase();
+
+                    if (currentSortOrder === 'desc') {
+                        return bStr.localeCompare(aStr);
+                    } else {
+                        return aStr.localeCompare(bStr);
+                    }
+                });
+                stocks = sortedData;
+            }
+
+            tbody.innerHTML = '';
+
+            if (stocks && stocks.length > 0) {
+                stocks.forEach((stock, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="stock-code">${stock.code || 'N/A'}</td>
+                        <td class="stock-name">${stock.name || 'N/A'}</td>
+                        <td class="positive">${formatPercentage(stock.change_rate)}</td>
+                        <td class="price">${formatNumber(stock.latest)}</td>
+                        <td>${formatAmount(stock.currency_value)}</td>
+                        <td class="positive">${formatPercentage(stock.rise_rate)}</td>
+                        <td>${formatSuccessRate(stock.limit_up_suc_rate)}</td>
+                        <td>${formatPercentage(stock.turnover_rate)}</td>
+                        <td>${formatAmount(stock.turnover)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                // 显示表格
+                tableEl.style.display = 'table';
+            } else {
+                tbody.innerHTML = '<tr><td colspan="9">暂无数据</td></tr>';
+                tableEl.style.display = 'table';
+            }
+        }
+        
+        // 行点击处理函数
+        function handleRowClick(row, code, stockName) {
+            // 移除之前选中的行样式
+            document.querySelectorAll('#stockTable tbody tr').forEach(tr => {
+                tr.classList.remove('selected-row');
+            });
+
+            // 添加当前行选中样式
+            row.classList.add('selected-row');
+
+            // 处理股票点击
+            handleStockClick(code, stockName);
+        }
+
+        // 股票点击处理函数
+        function handleStockClick(code, stockName) {
+            // 联动通达信
+            if (document.getElementById('tdxLinkSwitch') && document.getElementById('tdxLinkSwitch').checked) {
+                try {
+                    console.log('通达信联动开关已开启，发送联动请求');
+                    
+                    // 生成请求ID
+                    const requestId = 'tdx_' + Date.now();
+                    
+                    // 发送联动请求到Python端
+                    console.log(`TDX_LINK:STOCK:${code}:${requestId}`);
+                    
+                    // 显示联动成功提示
+                    showLinkageToast('通达信联动成功: ' + stockName + '(' + code + ')\n【前提：请打开通达信软件】', 'success');
+                    
+                    // 设置请求状态和清理逻辑
+                    window[requestId] = 'pending';
+                    setTimeout(() => {
+                        delete window[requestId];
+                        console.log(`已清理通达信请求状态: window[${requestId}]`);
+                    }, 4000);
+                } catch (error) {
+                    // 仅保留错误日志
+                    console.error('通达信联动过程中发生错误:', error);
+                }
+            }
+            
+            // 联动同花顺
+            if (document.getElementById('thsLinkSwitch') && document.getElementById('thsLinkSwitch').checked) {
+                try {
+                    console.log('同花顺联动开关已开启，发送联动请求');
+                    
+                    // 生成请求ID
+                    const requestId = 'ths_' + Date.now();
+                    
+                    // 发送联动请求到Python端
+                    console.log(`THS_LINK:STOCK:${code}:${requestId}`);
+                    
+                    // 显示联动成功提示
+                    showLinkageToast('同花顺联动成功: ' + stockName + '(' + code + ')\n【前提：请打开同花顺软件】', 'success');
+                    
+                    // 设置请求状态和清理逻辑
+                    window[requestId] = 'pending';
+                    setTimeout(() => {
+                        delete window[requestId];
+                        console.log(`已清理同花顺请求状态: window[${requestId}]`);
+                    }, 4000);
+                } catch (error) {
+                    // 仅保留错误日志
+                    console.error('同花顺联动过程中发生错误:', error);
+                }
+            }
+            
+            if (!document.getElementById('tdxLinkSwitch').checked && !document.getElementById('thsLinkSwitch').checked) {
+                console.log('所有联动开关未开启，跳过联动操作');
+            }
+        }
+
+        // 显示联动提示
+        function showLinkageToast(message, type) {
+            let toast = document.getElementById('linkageToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'linkageToast';
+                toast.className = 'linkage-toast';
+                document.body.appendChild(toast);
+            }
+            
+            toast.textContent = message;
+            toast.className = 'linkage-toast ' + type;
+            toast.style.display = 'block';
+            
+            // 添加一点延迟使transition生效
+            setTimeout(() => {
+                toast.style.opacity = '1';
+            }, 10);
+            
+            // 3秒后隐藏提示
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 300);
+            }, 3000);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 恢复用户的定时刷新设置
+            const savedInterval = loadUserPreference();
+            document.getElementById('autoRefreshSelect').value = savedInterval;
+
+            // 恢复排序状态
+            const sortState = loadSortState();
+            if (sortState.field) {
+                currentSortField = sortState.field;
+                currentSortOrder = sortState.order;
+                updateTableHeaders();
+            }
+
+            // 初始化定时刷新
+            updateAutoRefresh();
+
+            // 立即获取一次数据（手动刷新）
+            fetchStockData(false);
+
+            // 处理通达信联动开关
+            document.getElementById('tdxLinkSwitch').addEventListener('change', function() {
+                console.log('TDX_LINK:TOGGLE:' + this.checked);
+                // 如果通达信开关打开，则关闭同花顺开关
+                if (this.checked) {
+                    document.getElementById('thsLinkSwitch').checked = false;
+                }
+            });
+            
+            // 处理同花顺联动开关
+            document.getElementById('thsLinkSwitch').addEventListener('change', function() {
+                console.log('THS_LINK:TOGGLE:' + this.checked);
+                // 如果同花顺开关打开，则关闭通达信开关
+                if (this.checked) {
+                    document.getElementById('tdxLinkSwitch').checked = false;
+                }
+            });
+        });
+
+        // 为表格行添加点击事件
+        document.querySelector('#stockTable tbody').addEventListener('click', function(e) {
+            const row = e.target.closest('tr');
+            if (row) {
+                const code = row.cells[0].textContent;
+                const stockName = row.cells[1].textContent;
+                handleRowClick(row, code, stockName);
+            }
+        });
+    </script>
+</body>
+</html>

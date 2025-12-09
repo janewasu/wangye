@@ -112,7 +112,7 @@
             position: absolute;
             top: 100%;
             left: 0;
-            background-color: #388e3c;
+            background-color: #165DFF;
             color: #fff;
             padding: 14px;
             border-radius: 4px;
@@ -286,7 +286,7 @@
             const todayDate = getTodayDate(); // 获取当天日期
             const aigupiaoData = await fetchData('https://www.aigupiao.com/Quote/get_hot_stock_list?number=100'); // 爱股票热榜
             const longhuvipData = await fetchData('https://apphq.longhuvip.com/w1/api/index.php?Order=1&a=GetHotPHB&st=60&apiv=w21&Type=1&c=StockBidYiDong&PhoneOSNew=1'); // 开盘啦热榜
-            const tenjqkaData = await fetchData('https://eq.10jqka.com.cn/open/api/hot_list/v1/hot_stock/a/hour/data.txt'); // 同花顺热榜
+            const tenjqkaData = await fetchData('https://dq.10jqka.com.cn/fuyao/hot_list_data/out/hot_list/v1/stock?stock_type=a&type=hour&list_type=normal'); // 同花顺热榜
             const ziainquantData = await fetchData(`http://api.zizizaizai.com/open/sentiment/media/ths2/top?date1=${todayDate}&top_n=50`); // 自在量化热榜
 
             renderAigupiao(aigupiaoData);

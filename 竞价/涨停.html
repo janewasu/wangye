@@ -1,0 +1,573 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>涨停</title>
+    <style>
+        body {
+            background: #fff;
+            color: #000;
+        }
+        .container {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 0;
+        }
+        .table-area {
+            margin: 0;
+        }
+        table {
+            border-collapse: collapse;
+            white-space: nowrap;
+            background: #f8f9fa;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            font-size: 12px;
+            white-space: nowrap;
+            color: #000;
+        }
+        .purple-code {
+            color: #b266ff !important;
+        }
+        /* 涨停原因列左对齐 */
+        td:nth-child(4) {
+            text-align: left;
+        }
+        th {
+            background-color: #e9ecef;
+            cursor: pointer; /* 添加指针样式表示可点击 */
+        }
+        /* 添加排序标识样式 */
+        th.sorted::after {
+            content: "";
+            color: #2196f3;
+        }
+        th.sorted.asc::after {
+            content: " ↑";
+        }
+        th.sorted.desc::after {
+            content: " ↓";
+        }
+        h3, h4, h2 {
+            color: #e05151;
+        }
+        h3 {
+            text-align: left;
+            font-size: 16px;
+            margin: 8px 0 8px 0;
+        }
+        /* 实时刷新相关样式优化 */
+        #realtime-checkbox + span, #refresh-interval {
+            color: #333 !important;
+        }
+        #manual-refresh svg path {
+            stroke: #1565c0 !important;
+        }
+        
+        /* 联动相关样式 */
+        .selected-row {
+            background-color: #E6F3FF !important;
+        }
+        
+        /* 联动提示框样式 */
+        .linkage-toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 12px 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: white;
+            z-index: 1000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .linkage-toast.success {
+            background-color: #4CAF50;
+        }
+        
+        .linkage-toast.error {
+            background-color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div style="overflow-x: auto; width: 100%;">
+      <div class="container">
+        <div class="table-area" style="width:100%">
+            <h3 id="title-main" style="display: flex; align-items: center; justify-content: center; gap: 16px;">
+                涨停表现
+                <label style="font-size: 14px; display: flex; align-items: center; gap: 4px;">
+                    <input type="checkbox" id="realtime-checkbox" checked style="width: 16px; height: 16px; vertical-align: middle;"> 实时
+                    <select id="refresh-interval" style="margin-left:8px; height:22px; font-size:13px; color:#333;">
+                        <option value="3000">3秒</option>
+                        <option value="5000">5秒</option>
+                        <option value="10000">10秒</option>
+                    </select>
+                </label>
+                <span id="manual-refresh" title="手动刷新" style="cursor:pointer; display: flex; align-items: center;">
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M11 2V5" stroke="#2196f3" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M11 17V20" stroke="#2196f3" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M4.22 4.22L6.34 6.34" stroke="#2196f3" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M15.66 15.66L17.78 17.78" stroke="#2196f3" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M2 11H5" stroke="#2196f3" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M17 11H20" stroke="#2196f3" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M4.22 17.78L6.34 15.66" stroke="#2196f3" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M15.66 6.34L17.78 4.22" stroke="#2196f3" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <!-- 通达信联动开关 -->
+                <label style="font-size: 14px; display: flex; align-items: center; gap: 4px;">
+                    <input type="checkbox" id="tdxLinkSwitch" style="width: 16px; height: 16px; vertical-align: middle;">
+                    <span>通达信联动</span>
+                </label>
+                <!-- 同花顺联动开关 -->
+                <label style="font-size: 14px; display: flex; align-items: center; gap: 4px;">
+                    <input type="checkbox" id="thsLinkSwitch" style="width: 16px; height: 16px; vertical-align: middle;">
+                    <span>同花顺联动</span>
+                </label>
+            </h3>
+            <table id="main-table" style="width:100%"><thead><tr><th>代码</th><th>股票名称</th><th>涨停</th><th>涨停原因</th><th>封单</th><th>流通</th><th>连扳</th><th>板块</th><th>主力净额</th><th>成交额</th><th>实际换手</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+    <script>
+        const indices = [0, 1, 4, 5, 6, 13];
+        // 存储排序状态
+        let allData = [];
+        // 当前排序列和方向
+        let currentSort = { column: 2, direction: 'desc' }; // 默认按涨停时间降序
+
+        // 排序函数
+        function sortData(columnIndex, forceDirection = null, dataType = 'string') {
+            // 切换排序方向
+            if (forceDirection) {
+                currentSort.direction = forceDirection;
+            } else if (currentSort.column === columnIndex) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = columnIndex;
+                currentSort.direction = 'asc';
+            }
+
+            // 更新排序标识
+            document.querySelectorAll('th').forEach((th, idx) => {
+                th.classList.remove('sorted', 'asc', 'desc');
+                if (idx === columnIndex) {
+                    th.classList.add('sorted', currentSort.direction);
+                    th.textContent = th.textContent.replace(/ ↓| ↑/g, '');
+                    th.textContent += currentSort.direction === 'asc' ? ' ↑' : ' ↓';
+                }
+               });
+
+            // 执行排序
+            allData.sort((a, b) => {
+                let valA, valB;
+
+                // 根据列索引获取对应的数据
+                if (columnIndex === 3) { // 涨停原因
+                    valA = a[5] || ''; // 第6列是涨停原因
+                    valB = b[5] || '';
+                } else if (columnIndex === 4) { // 封单
+                    valA = parseFloat(a[6]) || 0; // 第7列是封单数据
+                    valB = parseFloat(b[6]) || 0;
+                } else if (columnIndex === 5) { // 流通
+                    valA = parseFloat(a[13]) || 0; // 第14列是流通数据
+                    valB = parseFloat(b[13]) || 0;
+                } else if (columnIndex === 6) { // 连扳
+                    // 从连扳列提取数字
+                    valA = a[18] || a[15] || ''; // 第19列或第16列
+                    valB = b[18] || b[15] || '';
+                    
+                    // 改进的连板数据提取逻辑
+                    valA = extractLianbanNumber(valA);
+                    valB = extractLianbanNumber(valB);
+                    dataType = 'number';
+                } else if (columnIndex === 7) { // 板块
+                    valA = a[12] || ''; // 第13列是板块数据
+                    valB = b[12] || '';
+                } else if (columnIndex === 8) { // 主力净额
+                    valA = parseFloat(a[8]) || 0; // 第9列是主力净额
+                    valB = parseFloat(b[8]) || 0;
+                } else if (columnIndex === 9) { // 成交额
+                    valA = parseFloat(a[11]) || 0; // 第12列是成交额
+                    valB = parseFloat(b[11]) || 0;
+                } else if (columnIndex === 10) { // 实际换手
+                    valA = parseFloat(a[14]) || 0; // 第15列是实际换手
+                    valB = parseFloat(b[14]) || 0;
+                } else if (columnIndex === 2) { // 涨停时间
+                    valA = parseInt(a[4]) || 0; // 第5列是涨停时间
+                    valB = parseInt(b[4]) || 0;
+                    dataType = 'number';
+                } else {
+                    return 0;
+                }
+
+                // 根据数据类型进行排序
+                if (dataType === 'number') {
+                    return currentSort.direction === 'asc' ? valA - valB : valB - valA;
+                } else {
+                    // 确保valA和valB都是字符串类型
+                    valA = String(valA);
+                    valB = String(valB);
+                    return currentSort.direction === 'asc' ?
+                        valA.localeCompare(valB) :
+                        valB.localeCompare(valA);
+                }
+            });
+
+            // 重新渲染表格
+            renderMainTable(allData);
+        }
+
+        // 提取连板数量的辅助函数
+        function extractLianbanNumber(value) {
+            if (!value) return 0;
+            const strValue = String(value);
+            if (strValue.includes('连扳')) {
+                // 提取连扳前面的数字
+                const match = strValue.match(/(\d+)连扳/);
+                return match ? parseInt(match[1]) : 0;
+            } else if (strValue === '首板') {
+                return 1;
+            } else {
+                // 尝试直接转换为数字
+                const num = parseInt(strValue);
+                return isNaN(num) ? 0 : num;
+            }
+        }
+
+        // 为表头添加点击事件
+        document.querySelectorAll('#main-table th').forEach((th, index) => {
+            // 只为指定列添加排序功能
+            if ([2, 3, 4, 5, 6, 7, 8, 9, 10].includes(index)) {
+                th.addEventListener('click', () => {
+                    if (index === 4 || index === 5 || index === 6 || index === 8 || index === 9 || index === 10) {
+                        sortData(index, null, 'number'); // 修正参数传递
+                    } else {
+                        sortData(index);
+                    }
+                });
+            }
+        });
+
+        // 渲染主表格
+        function renderMainTable(data) {
+            const tbody = document.querySelector(`#main-table tbody`);
+            tbody.innerHTML = '';
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                indices.forEach((idx, i) => {
+                    const td = document.createElement('td');
+                    if(i === 4) { // 封单列
+                        let val = parseFloat(row[idx]);
+                        if (!isNaN(val)) {
+                            td.textContent = (val / 100000000).toFixed(2);
+                        } else {
+                            td.textContent = row[idx];
+                        }
+                    } else if(i === 2) { // 涨停时间列
+                        let ts = parseInt(row[idx]);
+                        if (!isNaN(ts)) {
+                            if(ts.toString().length === 10) ts = ts * 1000;
+                            const date = new Date(ts);
+                            const pad = n => n.toString().padStart(2, '0');
+                            const formatted = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+                            td.textContent = formatted;
+                            if(formatted === '09:25') td.style.color = 'red';
+                            else if(formatted === '09:30') td.style.color = '#FFD600';
+                        } else {
+                            td.textContent = row[idx];
+                        }
+                    } else if(i === 5) { // 流通列
+                        let val = parseFloat(row[idx]);
+                        if (!isNaN(val)) {
+                            td.textContent = (val / 100000000).toFixed(2);
+                        } else {
+                            td.textContent = row[idx];
+                        }
+                    } else if(i === 3) { // 涨停原因列，拼接涨停数量
+                        const reason = row[idx];
+                        const num = row[20]; // 涨停数量
+                        td.textContent = reason + (num ? `（${num}）` : '');
+                    } else if(i === 1) { // 股票名称
+                        td.textContent = row[idx];
+                    } else if(i === 0) { // 股票代码，按规则着色
+                        td.textContent = row[idx];
+                        const code = row[idx].toString();
+                        if (code.startsWith('3') || code.startsWith('68') || code.startsWith('9') || code.startsWith('4')) {
+                            td.classList.add('purple-code');
+                        } else {
+                            td.style.color = '#666'; // 加深灰色
+                        }
+                    } else {
+                        td.textContent = row[idx];
+                    }
+                    tr.appendChild(td);
+                });
+                // 新增连扳列
+                const tdLianBan = document.createElement('td');
+                let lianban = row[18]; // 第19列
+                if (!lianban || lianban === '' || lianban === undefined || lianban === null) {
+                    const val = parseInt(row[15]); // 第16列
+                    if (!isNaN(val)) {
+                        if (val > 1) {
+                            lianban = `${val}连扳`;
+                        } else if (val === 1) {
+                            lianban = '首板';
+                        } else {
+                            lianban = '';
+                        }
+                    } else {
+                        lianban = '';
+                    }
+                }
+                tdLianBan.textContent = lianban;
+                tr.appendChild(tdLianBan);
+                // 新增板块列（第13列，索引12）
+                const tdBankuai = document.createElement('td');
+                tdBankuai.textContent = row[12] || '';
+                tr.appendChild(tdBankuai);
+                // 新增主力净额（第9列，索引8）
+                const tdZhuli = document.createElement('td');
+                let zhuliVal = parseFloat(row[8]);
+                if (!isNaN(zhuliVal)) {
+                    tdZhuli.textContent = (zhuliVal / 10000).toFixed(2) + '万';
+                } else {
+                    tdZhuli.textContent = row[8] || '';
+                }
+                tr.appendChild(tdZhuli);
+                // 新增成交额（第12列，索引11）
+                const tdChengjiao = document.createElement('td');
+                let chengjiaoVal = parseFloat(row[11]);
+                if (!isNaN(chengjiaoVal)) {
+                    tdChengjiao.textContent = (chengjiaoVal / 100000000).toFixed(2) + '亿';
+                } else {
+                    tdChengjiao.textContent = row[11] || '';
+                }
+                tr.appendChild(tdChengjiao);
+                // 新增实际换手（第15列，索引14）
+                const tdHuanShou = document.createElement('td');
+                tdHuanShou.textContent = row[14] || '';
+                tr.appendChild(tdHuanShou);
+                tbody.appendChild(tr);
+            });
+            // 设置标题条数
+            const title = document.getElementById('title-main');
+            if(title) {
+                // 获取控件部分（即标题后面的所有内容）
+                const controls = Array.from(title.childNodes).filter(node => node.nodeType !== Node.TEXT_NODE);
+                // 重新设置标题
+                title.innerHTML = `涨停（${data.length}）`;
+                controls.forEach(ctrl => title.appendChild(ctrl));
+            }
+        }
+        // 获取所有板块数据并合并
+        function fetchAndMergeAll() {
+            const pidTypes = [1,2,3,4,5];
+            const fetches = pidTypes.map(pidType => {
+                const url = `https://apphwhq.longhuvip.com/w1/api/index.php?Order=0&a=DailyLimitPerformance&st=2000&c=HomeDingPan&PhoneOSNew=1&DeviceID=d66474b3-fd78-3a95-a56d-76e29e765ea3&VerSion=5.18.0.2&Index=0&PidType=${pidType}&apiv=w39&Type=4&`;
+                return fetch(url).then(r => r.json()).then(data => data.info && data.info[0] ? data.info[0] : []);
+            });
+            Promise.all(fetches).then(results => {
+                // 合并所有数据
+                allData = results.flat();
+                // 使用当前排序状态进行排序
+                // 根据当前排序列确定数据类型
+                let dataType = 'string';
+                if ([4, 5, 6, 8, 9, 10, 2].includes(currentSort.column)) {
+                    dataType = 'number';
+                }
+                // 保存当前排序状态
+                const currentDirection = currentSort.direction;
+                // 重新应用排序
+                sortData(currentSort.column, currentDirection, dataType);
+            }).catch(error => {
+                const tbody = document.querySelector(`#main-table tbody`);
+                tbody.innerHTML = `<tr><td colspan="6">数据加载失败: ${error}</td></tr>`;
+            });
+    }
+
+    // 行点击处理函数
+    function handleRowClick(row, code, stockName) {
+        // 移除之前选中的行样式
+        document.querySelectorAll('#main-table tbody tr').forEach(tr => {
+            tr.classList.remove('selected-row');
+        });
+
+        // 添加当前行选中样式
+        row.classList.add('selected-row');
+
+        // 处理股票点击
+        handleStockClick(code, stockName);
+    }
+
+    // 股票点击处理函数
+    function handleStockClick(code, stockName) {
+        // 联动通达信
+        if (document.getElementById('tdxLinkSwitch') && document.getElementById('tdxLinkSwitch').checked) {
+            try {
+                console.log('通达信联动开关已开启，发送联动请求');
+                
+                // 生成请求ID
+                const requestId = 'tdx_' + Date.now();
+                
+                // 发送联动请求到Python端
+                console.log(`TDX_LINK:STOCK:${code}:${requestId}`);
+                
+                // 显示联动成功提示
+                showLinkageToast('通达信联动成功: ' + stockName + '(' + code + ')\n【前提：请打开通达信软件】', 'success');
+                
+                // 设置请求状态和清理逻辑
+                window[requestId] = 'pending';
+                setTimeout(() => {
+                    delete window[requestId];
+                    console.log(`已清理通达信请求状态: window[${requestId}]`);
+                }, 4000);
+            } catch (error) {
+                // 仅保留错误日志
+                console.error('通达信联动过程中发生错误:', error);
+            }
+        }
+        
+        // 联动同花顺
+        if (document.getElementById('thsLinkSwitch') && document.getElementById('thsLinkSwitch').checked) {
+            try {
+                console.log('同花顺联动开关已开启，发送联动请求');
+                
+                // 生成请求ID
+                const requestId = 'ths_' + Date.now();
+                
+                // 发送联动请求到Python端
+                console.log(`THS_LINK:STOCK:${code}:${requestId}`);
+                
+                // 显示联动成功提示
+                showLinkageToast('同花顺联动成功: ' + stockName + '(' + code + ')\n【前提：请打开同花顺软件】', 'success');
+                
+                // 设置请求状态和清理逻辑
+                window[requestId] = 'pending';
+                setTimeout(() => {
+                    delete window[requestId];
+                    console.log(`已清理同花顺请求状态: window[${requestId}]`);
+                }, 4000);
+            } catch (error) {
+                // 仅保留错误日志
+                console.error('同花顺联动过程中发生错误:', error);
+            }
+        }
+        
+        if (!document.getElementById('tdxLinkSwitch').checked && !document.getElementById('thsLinkSwitch').checked) {
+            console.log('所有联动开关未开启，跳过联动操作');
+        }
+    }
+
+    // 显示联动提示
+    function showLinkageToast(message, type) {
+        let toast = document.getElementById('linkageToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'linkageToast';
+            toast.className = 'linkage-toast';
+            document.body.appendChild(toast);
+        }
+        
+        toast.textContent = message;
+        toast.className = 'linkage-toast ' + type;
+        toast.style.display = 'block';
+        
+        // 添加一点延迟使transition生效
+        setTimeout(() => {
+            toast.style.opacity = '1';
+        }, 10);
+        
+        // 3秒后隐藏提示
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 300);
+        }, 3000);
+    }
+    // 刷新函数
+    function refreshAll() {
+        fetchAndMergeAll();
+    }
+    // 实时刷新逻辑
+    let realtimeTimer = null;
+    const realtimeCheckbox = document.getElementById('realtime-checkbox');
+    const refreshIntervalSelect = document.getElementById('refresh-interval');
+    // 读取本地存储的刷新间隔
+    let refreshInterval = 5000;
+    const savedInterval = localStorage.getItem('refreshInterval');
+    if (savedInterval && refreshIntervalSelect.querySelector(`option[value='${savedInterval}']`)) {
+        refreshInterval = parseInt(savedInterval, 10);
+        refreshIntervalSelect.value = savedInterval;
+    } else {
+        refreshInterval = parseInt(refreshIntervalSelect.value, 10);
+    }
+    realtimeCheckbox.addEventListener('change', function() {
+        if(this.checked) {
+            refreshAll();
+            realtimeTimer = setInterval(refreshAll, refreshInterval);
+        } else {
+            if(realtimeTimer) clearInterval(realtimeTimer);
+        }
+    });
+    refreshIntervalSelect.addEventListener('change', function() {
+        refreshInterval = parseInt(this.value, 10);
+        localStorage.setItem('refreshInterval', this.value);
+        if (realtimeCheckbox.checked) {
+            if(realtimeTimer) clearInterval(realtimeTimer);
+            realtimeTimer = setInterval(refreshAll, refreshInterval);
+        }
+    });
+    // 手动刷新按钮
+    document.getElementById('manual-refresh').addEventListener('click', function() {
+        refreshAll();
+    });
+
+    // 处理通达信联动开关
+    document.getElementById('tdxLinkSwitch').addEventListener('change', function() {
+        console.log('TDX_LINK:TOGGLE:' + this.checked);
+        // 如果通达信开关打开，则关闭同花顺开关
+        if (this.checked) {
+            document.getElementById('thsLinkSwitch').checked = false;
+        }
+    });
+    
+    // 处理同花顺联动开关
+    document.getElementById('thsLinkSwitch').addEventListener('change', function() {
+        console.log('THS_LINK:TOGGLE:' + this.checked);
+        // 如果同花顺开关打开，则关闭通达信开关
+        if (this.checked) {
+            document.getElementById('tdxLinkSwitch').checked = false;
+        }
+    });
+    
+    // 为表格行添加点击事件
+    document.querySelector('#main-table tbody').addEventListener('click', function(e) {
+        const row = e.target.closest('tr');
+        if (row) {
+            const code = row.cells[0].textContent;
+            const stockName = row.cells[1].textContent;
+            handleRowClick(row, code, stockName);
+        }
+    });
+
+    // 页面初次加载
+    refreshAll();
+    // 默认开启实时更新
+    realtimeTimer = setInterval(refreshAll, refreshInterval);
+    </script>
+</body>
+</html>
